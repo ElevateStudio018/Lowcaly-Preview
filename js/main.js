@@ -164,7 +164,7 @@ function onScroll() {
   // hero photo drifts slower than the page
   const h = $('.hero__media');
   const hr = $('.hero').getBoundingClientRect();
-  if (hr.bottom > 0) h.style.transform = `translateY(${scrollY * 0.3}px)`;
+  if (hr.bottom > 0) h.style.transform = `translateY(${scrollY * 0.12}px)`;
   // about image parallax
   const m = $('.about__media img');
   const r = m.parentElement.getBoundingClientRect();
@@ -200,7 +200,7 @@ $$('a[href^="#"]').forEach((a) => a.addEventListener('click', (e) => {
 
 // ---------------------------------------------------------------- magnetic buttons
 if (matchMedia('(hover: hover) and (pointer: fine)').matches && !reducedMotion) {
-  $$('.btn, .chip').forEach((btn) => {
+  $$('.btn').forEach((btn) => {
     btn.addEventListener('pointermove', (e) => {
       const r = btn.getBoundingClientRect();
       btn.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * 0.25}px, ${(e.clientY - r.top - r.height / 2) * 0.35}px)`;

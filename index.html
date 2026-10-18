@@ -72,32 +72,21 @@
   <main id="top">
     <!-- Hero -->
     <section class="hero" id="hero">
-      <div class="hero__media">
-        <!-- poster frame shows instantly; main.js swaps in the 4K (or mobile) loop -->
-        <img src="assets/img/hero.webp" alt="Lowcaly Cherry och Mixed Berry med iskalla glas på ett träbord" fetchpriority="high">
-        <video class="hero__video" id="heroVideo" muted loop playsinline preload="none" aria-hidden="true"
-          data-4k="assets/video/hero-4k.mp4" data-hd="assets/video/hero-1080.mp4" data-mobile="assets/video/hero-mobile.mp4"></video>
-      </div>
-      <div class="hero__shade" aria-hidden="true"></div>
-      <div class="hero__content">
-        <div class="hero-top">
-          <p class="eyebrow"><span class="eyebrow__line"></span>Sockerfria frukt- &amp; frukostdrycker</p>
-        </div>
-        <div class="hero__main">
-          <h1 class="hero__title">
-            <span class="hero__line"><span>Zero Sugar</span></span>
-            <span class="hero__line"><span>Hero Taste</span></span>
-          </h1>
-          <div class="hero__aside">
-            <p>Mer bär, mer smak – alltid zero sugar. Fräscha, vitaminberikade frukt- och frukostdrycker som visar att hälsosmart kan vara fullt av smak.</p>
-            <div class="hero-ctas">
-              <a class="btn btn--cream magnetic" href="#story">Upptäck smakerna</a>
-              <a class="btn btn--ghost magnetic" href="#produkter">Alla produkter</a>
-            </div>
-          </div>
+      <div class="hero__frame">
+        <div class="hero__media">
+          <!-- poster frame shows instantly; main.js swaps in the 4K (or mobile) loop -->
+          <img src="assets/img/hero.webp" alt="Lowcaly Cherry och Mixed Berry med iskalla glas på ett träbord" fetchpriority="high">
+          <video class="hero__video" id="heroVideo" muted loop playsinline preload="none" aria-hidden="true"
+            data-4k="assets/video/hero-4k.mp4" data-hd="assets/video/hero-1080.mp4" data-mobile="assets/video/hero-mobile.mp4"></video>
         </div>
       </div>
-      <div class="scroll-cue" aria-hidden="true"><span></span></div>
+      <div class="hero__bar">
+        <h1 class="hero__title"><span class="hero__line"><span>Zero Sugar – Hero Taste</span></span></h1>
+        <div class="hero__aside">
+          <p>Fräscha, vitaminberikade frukt- och frukostdrycker. Alltid sockerfria.</p>
+          <a class="hero__link" href="#story">Upptäck smakerna<svg width="35" height="12" viewBox="0 0 35 14"><line x1="0" y1="8" x2="35" y2="8" stroke="currentColor"/><polyline points="30,4 35,8 30,12" fill="none" stroke="currentColor"/></svg></a>
+        </div>
+      </div>
     </section>
 
     <!-- 3D scroll story -->
