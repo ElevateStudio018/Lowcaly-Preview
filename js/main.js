@@ -264,7 +264,13 @@ if (heroVideo && !reducedMotion && !navigator.connection?.saveData) {
   if (mobile) $('.hero__media img').src = 'assets/img/hero-mobile.webp';
   // 4K only where the screen can actually show it (large or high-DPI displays)
   const physicalWidth = innerWidth * Math.min(devicePixelRatio, 2);
-  heroVideo.src = mobile ? heroVideo.dataset.mobile : physicalWidth >= 2400 ? heroVideo.dataset['4k'] : heroVideo.dataset.hd;
+  let src = mobile ? heroVideo.dataset.mobile : physicalWidth >= 2400 ? heroVideo.dataset['4k'] : heroVideo.dataset.hd;
+  // raw.githack (the preview host) refuses video files, so pull them from jsDelivr there.
+  // Pinned to the commit that added the videos; the files themselves never change.
+  if (location.hostname.endsWith('githack.com')) {
+    src = 'https://cdn.jsdelivr.net/gh/ElevateStudio018/Lowcaly-Preview@3fc92c1f85b533b062151b88ced7eb6354a2cda6/' + src;
+  }
+  heroVideo.src = src;
   heroVideo.preload = 'auto';
   heroVideo.addEventListener('playing', () => heroVideo.classList.add('is-playing'), { once: true });
   heroVideo.play().catch(() => {});
