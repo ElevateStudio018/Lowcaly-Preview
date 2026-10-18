@@ -408,3 +408,57 @@ body.is-ready .hero__line > span { transform: none; }
   .hero__content { padding-bottom: 34px; }
   .hero__shade { background: linear-gradient(0deg, rgba(0, 45, 36, .9) 0%, rgba(0, 45, 36, .4) 45%, rgba(0, 45, 36, 0) 70%), linear-gradient(180deg, rgba(0, 35, 28, .4), transparent 25%); }
 }
+
+/* ================================================================ sugar calculator */
+.sugar {
+  position: relative; z-index: 2; color: var(--cream); overflow: hidden;
+  background: radial-gradient(90% 80% at 75% 50%, #0b6b55 0%, #005745 45%, #003d30 100%);
+}
+.sugar__inner { max-width: calc(var(--max) + var(--pad) * 2); margin: 0 auto; padding: 120px var(--pad); display: grid; grid-template-columns: 1fr 1.05fr; gap: 40px; align-items: center; }
+.sugar .h-xl { margin-bottom: .35em; }
+.sugar__lead { margin: 0 0 34px; max-width: 460px; font-size: 1.12rem; opacity: .9; }
+.sugar__field { margin-bottom: 26px; }
+.sugar__label { display: block; margin-bottom: 10px; font-family: var(--font-head); font-weight: 600; letter-spacing: 2px; text-transform: uppercase; font-size: .9rem; opacity: .8; }
+.sugar__label span { font-weight: 500; opacity: .7; letter-spacing: 1px; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+.seg button {
+  font-family: var(--font-head); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; font-size: 1rem;
+  padding: .5em 1.2em; border-radius: 999px; border: 1.5px solid rgba(255, 243, 227, .4); color: var(--cream);
+  transition: background .25s, color .25s, border-color .25s;
+}
+.seg button:hover { border-color: var(--cream); }
+.seg button.is-active { background: var(--cream); color: var(--green); border-color: var(--cream); }
+.range { display: flex; align-items: center; gap: 20px; max-width: 460px; }
+.range input { flex: 1; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 4px; outline-offset: 6px;
+  background: linear-gradient(90deg, var(--cream) var(--fill, 14%), rgba(255, 243, 227, .25) var(--fill, 14%)); }
+.range input::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: var(--cream); box-shadow: 0 4px 16px rgba(0, 0, 0, .3); cursor: pointer; transition: transform .2s; }
+.range input::-webkit-slider-thumb:hover { transform: scale(1.12); }
+.range input::-moz-range-thumb { width: 26px; height: 26px; border: 0; border-radius: 50%; background: var(--cream); cursor: pointer; }
+.range output { min-width: 1.6ch; font-family: var(--font-head); font-weight: 600; font-size: 3rem; line-height: 1; }
+.switch { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; padding: 5px; border-radius: 999px; background: rgba(0, 0, 0, .22); margin: 6px 0 34px; }
+.switch button { position: relative; z-index: 1; font-family: var(--font-head); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; font-size: 1.05rem; padding: .6em 1.6em; color: var(--cream); transition: color .35s; }
+.switch button.is-active { color: var(--green); }
+.switch__pill { position: absolute; top: 5px; bottom: 5px; left: 5px; width: calc(50% - 5px); border-radius: 999px; background: var(--cream); transition: transform .55s var(--ease); }
+.switch.is-lowcaly .switch__pill { transform: translateX(100%); }
+.sugar__stats { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 34px; margin: 0 0 18px; }
+.sugar__stats div { border-left: 1px solid rgba(255, 243, 227, .3); padding-left: 14px; }
+.sugar__stats dt { font-family: var(--font-head); font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; font-size: .8rem; opacity: .7; }
+.sugar__stats dd { margin: 4px 0 0; font-family: var(--font-head); font-weight: 600; font-size: clamp(2.2rem, 4vw, 3.4rem); line-height: 1; font-variant-numeric: tabular-nums; }
+.sugar__save { min-height: 1.6em; margin: 0 0 22px; font-size: 1.15rem; }
+.sugar__save b { font-family: var(--font-head); font-weight: 600; letter-spacing: .5px; font-size: 1.3rem; }
+.sugar__note { max-width: 520px; margin: 0; font-size: .82rem; line-height: 1.45; opacity: .6; }
+.sugar__stage { position: relative; aspect-ratio: 1 / 1.05; }
+.sugar__stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sugar__badge {
+  position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%) scale(.6) rotate(-8deg); opacity: 0; pointer-events: none;
+  font-family: var(--font-head); font-weight: 600; text-transform: uppercase; text-align: center; line-height: .85;
+  font-size: clamp(3rem, 7vw, 6rem); color: var(--cream); text-shadow: 0 10px 40px rgba(0, 30, 24, .5);
+  transition: opacity .6s var(--ease), transform .9s cubic-bezier(.2, 1.6, .4, 1);
+}
+.sugar.is-lowcaly .sugar__badge { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-8deg); transition-delay: .5s; }
+.sugar__scale { position: absolute; left: 50%; bottom: 2%; transform: translateX(-50%); font-family: var(--font-head); font-weight: 500; letter-spacing: 2px; text-transform: uppercase; font-size: .8rem; opacity: .6; white-space: nowrap; }
+@media (max-width: 900px) {
+  .sugar__inner { grid-template-columns: 1fr; padding: 90px var(--pad); }
+  .sugar__stage { order: -1; max-width: 520px; width: 100%; margin: 0 auto -20px; }
+  .sugar__stats { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+}

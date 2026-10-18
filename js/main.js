@@ -234,6 +234,85 @@ const io = new IntersectionObserver((entries) => {
 }, { rootMargin: '0px 0px -8% 0px' });
 $$('.reveal, .split').forEach((el) => io.observe(el));
 
+// ---------------------------------------------------------------- sugar calculator
+const sugarSection = $('#socker');
+const sugarUI = {
+  per100: 8.8, kcal100: 45, glasses: 2, mode: 'regular',
+  cubes: $('#sCubes'), kg: $('#sKg'), kcal: $('#sKcal'), save: $('#sSave')
+};
+const LOWCALY = { sugar: 0.5, kcal: 3 };
+const CUBE_G = 4, PER_BIT = 25, GLASS_ML = 250;
+let jar = null;
+const nf = new Intl.NumberFormat('sv-SE');
+const nf1 = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+const shown = { cubes: 0, kg: 0, kcal: 0 };
+
+function yearly(sugarPer100, kcalPer100) {
+  const ml = sugarUI.glasses * GLASS_ML * 365;
+  const grams = (ml / 100) * sugarPer100;
+  return { grams, cubes: grams / CUBE_G, kcal: (ml / 100) * kcalPer100 };
+}
+function tweenNumbers(to) {
+  const from = { ...shown }, t0 = performance.now(), dur = 900;
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    for (const key in to) shown[key] = from[key] + (to[key] - from[key]) * e;
+    // Lowcaly is labelled "< 0,5 g sugar", so its figures are upper bounds
+    const lt = sugarUI.mode === 'lowcaly' ? '< ' : '';
+    sugarUI.cubes.textContent = lt + nf.format(Math.round(shown.cubes));
+    sugarUI.kg.textContent = lt + nf1.format(shown.kg);
+    sugarUI.kcal.textContent = nf.format(Math.round(shown.kcal / 100) * 100);
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function updateSugar() {
+  const reg = yearly(sugarUI.per100, sugarUI.kcal100);
+  const low = yearly(LOWCALY.sugar, LOWCALY.kcal);
+  const cur = sugarUI.mode === 'lowcaly' ? low : reg;
+  tweenNumbers({ cubes: cur.cubes, kg: cur.grams / 1000, kcal: cur.kcal });
+  const savedKg = (reg.grams - low.grams) / 1000;
+  sugarUI.save.innerHTML = sugarUI.mode === 'lowcaly'
+    ? `Du slipper <b>${nf1.format(savedKg)} kg socker</b> och <b>${nf.format(Math.round((reg.kcal - low.kcal) / 100) * 100)} kcal</b> om året.`
+    : `Det motsvarar <b>${nf.format(Math.round(reg.cubes / 365))} sockerbitar</b> varje dag.`;
+  // Lowcaly rounds to zero sugar on the label, so the jar empties completely
+  jar?.setCount(sugarUI.mode === 'lowcaly' ? 0 : cur.cubes / PER_BIT);
+}
+$$('.seg button').forEach((b) => b.addEventListener('click', () => {
+  $$('.seg button').forEach((x) => { x.classList.toggle('is-active', x === b); x.setAttribute('aria-checked', x === b); });
+  sugarUI.per100 = +b.dataset.sugar;
+  sugarUI.kcal100 = +b.dataset.kcal;
+  updateSugar();
+}));
+const glassesIn = $('#glasses');
+glassesIn.addEventListener('input', () => {
+  sugarUI.glasses = +glassesIn.value;
+  $('#glassesOut').textContent = glassesIn.value;
+  glassesIn.style.setProperty('--fill', `${((glassesIn.value - 1) / 7) * 100}%`);
+  updateSugar();
+});
+$$('.switch button').forEach((b) => b.addEventListener('click', () => {
+  sugarUI.mode = b.dataset.mode;
+  $$('.switch button').forEach((x) => { x.classList.toggle('is-active', x === b); x.setAttribute('aria-selected', x === b); });
+  const low = sugarUI.mode === 'lowcaly';
+  $('.switch').classList.toggle('is-lowcaly', low);
+  sugarSection.classList.toggle('is-lowcaly', low);
+  updateSugar();
+}));
+// build the 3D jar only when the section comes near, then fill it as it enters
+let sugarStarted = false;
+new IntersectionObserver(([e]) => {
+  if (e.isIntersecting && !sugarStarted) {
+    sugarStarted = true;
+    import('./sugar.js').then(({ createSugarJar }) => {
+      jar = createSugarJar($('#sugarCanvas'));
+      jar.setRunning(true);
+      setTimeout(updateSugar, 300);
+    }).catch((err) => { console.warn('Sugar jar unavailable', err); updateSugar(); });
+  }
+  jar?.setRunning(e.isIntersecting);
+}, { rootMargin: '200px 0px' }).observe(sugarSection);
+
 // ---------------------------------------------------------------- hero video
 // The poster image paints first; the right-sized loop fades in once it can play.
 const heroVideo = $('#heroVideo');

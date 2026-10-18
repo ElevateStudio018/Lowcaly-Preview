@@ -62,6 +62,7 @@
             <li><a href="#inspiration" data-filter="nyhet">Nyheter</a></li>
           </ul>
         </li>
+        <li><a href="#socker">Sockerkalkylatorn</a></li>
         <li><a href="#om">Om Lowcaly</a></li>
         <li><a href="https://www.lowcaly.com/sv/kontakt/">Kontakt</a></li>
       </ul>
@@ -124,6 +125,53 @@
         <span>Zero Sugar</span><i>✦</i><em>hero taste</em><i>✦</i><span>Sockerfritt</span><i>✦</i><em>vitaminberikat</em><i>✦</i><span>9 smaker</span><i>✦</i><em>alltid gott</em><i>✦</i>
       </div>
     </div>
+
+    <!-- Sugar calculator -->
+    <section class="sugar" id="socker">
+      <div class="sugar__inner">
+        <div class="sugar__copy">
+          <p class="kicker reveal">Sockerkalkylatorn</p>
+          <h2 class="h-xl reveal">Hur mycket socker sparar du?</h2>
+          <p class="sugar__lead reveal">Välj vad du dricker idag så visar vi hur mycket socker det blir på ett år – och vad som händer när du byter till Lowcaly.</p>
+
+          <div class="sugar__field reveal">
+            <span class="sugar__label" id="drinkLabel">Jag dricker</span>
+            <div class="seg" role="radiogroup" aria-labelledby="drinkLabel">
+              <button role="radio" aria-checked="true" class="is-active" data-sugar="8.8" data-kcal="45">Apelsinjuice</button>
+              <button role="radio" aria-checked="false" data-sugar="9.6" data-kcal="46">Äppeljuice</button>
+              <button role="radio" aria-checked="false" data-sugar="10.6" data-kcal="42">Läsk</button>
+            </div>
+          </div>
+
+          <div class="sugar__field reveal">
+            <label class="sugar__label" for="glasses">Glas per dag <span>(25 cl)</span></label>
+            <div class="range">
+              <input type="range" id="glasses" min="1" max="8" step="1" value="2">
+              <output id="glassesOut" for="glasses">2</output>
+            </div>
+          </div>
+
+          <div class="switch reveal" role="tablist" aria-label="Jämför">
+            <button role="tab" aria-selected="true" class="is-active" data-mode="regular">Som idag</button>
+            <button role="tab" aria-selected="false" data-mode="lowcaly">Med Lowcaly</button>
+            <span class="switch__pill" aria-hidden="true"></span>
+          </div>
+
+          <dl class="sugar__stats reveal">
+            <div><dt>Sockerbitar / år</dt><dd id="sCubes">0</dd></div>
+            <div><dt>Kilo socker / år</dt><dd id="sKg">0</dd></div>
+            <div><dt>Kcal / år</dt><dd id="sKcal">0</dd></div>
+          </dl>
+          <p class="sugar__save reveal" id="sSave"></p>
+          <p class="sugar__note">En bit i burken motsvarar 25 sockerbitar à 4 g. Ungefärliga genomsnittsvärden per 100 ml: apelsinjuice 8,8 g socker / 45 kcal, äppeljuice 9,6 g / 46 kcal, läsk 10,6 g / 42 kcal. Lowcaly: &lt; 0,5 g / 3 kcal.</p>
+        </div>
+        <div class="sugar__stage">
+          <canvas id="sugarCanvas" aria-label="Glasburk som fylls med sockerbitar"></canvas>
+          <span class="sugar__badge" id="sBadge" aria-hidden="true">Zero<br>Sugar</span>
+          <span class="sugar__scale" aria-hidden="true">1 bit = 25 sockerbitar</span>
+        </div>
+      </div>
+    </section>
 
     <!-- Product range -->
     <section class="products" id="produkter">

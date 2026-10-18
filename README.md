@@ -26,6 +26,7 @@ python3 -m http.server 8000
 | `js/carton.js` | 3D-förpackning byggd av de riktiga förpackningsbilderna + genererad bak-/sidopanel |
 | `js/fruits.js` | Procedurella frukter (körsbär, jordgubbe, hallon, blåbär, päron, persika, mango, blad) |
 | `js/scene.js` | Three.js-scen, scrollanimation, hover/drag-fysik |
+| `js/sugar.js` | Sockerkalkylatorn: glasburk i 3D som fylls med sockerbitar |
 | `js/main.js` | Overlay-texter, färgövergångar, meny, filter, reveal-animationer |
 
 ## Hero-video
