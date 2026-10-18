@@ -41,24 +41,24 @@ function wrap(g, text, x, y, maxW, lh) {
 }
 
 // Back panel: nutrition table + ingredients, like the real pack.
-function backCanvas(f, edgeImg) {
+function backCanvas(f, frontImg) {
   const W = 768, H = 1952, cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const g = cv.getContext('2d');
-  g.fillStyle = f.color;
-  g.fillRect(0, 0, W, H);
-  // illustrated border made from the pack's own artwork
+  // the front illustration continues round the back (mirrored), framing the info panel
   g.save();
-  g.globalAlpha = 0.95;
-  g.drawImage(edgeImg, 0, 0, edgeImg.width, edgeImg.height, 0, 0, 150, H);
   g.translate(W, 0); g.scale(-1, 1);
-  g.drawImage(edgeImg, 0, 0, edgeImg.width, edgeImg.height, 0, 0, 150, H);
+  g.drawImage(frontImg, 0, 0, W, H);
   g.restore();
 
-  const px = 110, pw = W - 220;
+  const px = 84, pw = W - 168;
+  g.save();
+  g.shadowColor = 'rgba(0,0,0,0.12)';
+  g.shadowBlur = 18;
   g.fillStyle = CREAM;
-  roundRect(g, px, 70, pw, H - 140, 46);
+  roundRect(g, px, 70, pw, H - 170, 46);
   g.fill();
+  g.restore();
 
   g.fillStyle = GREEN;
   g.textAlign = 'center';
@@ -80,7 +80,7 @@ function backCanvas(f, edgeImg) {
   let y = 560;
   g.lineWidth = 2;
   g.strokeStyle = GREEN;
-  g.font = `400 30px ${BODY}`;
+  g.font = `500 31px ${BODY}`;
   for (const [k, v] of rows) {
     g.beginPath(); g.moveTo(px + 40, y - 34); g.lineTo(px + pw - 40, y - 34); g.stroke();
     g.textAlign = 'left'; g.fillText(k, px + 40, y);
@@ -92,13 +92,13 @@ function backCanvas(f, edgeImg) {
   g.textAlign = 'left';
   g.font = `600 34px ${HEAD}`;
   g.fillText('INGREDIENSER', px + 40, y + 40);
-  g.font = `400 27px ${BODY}`;
+  g.font = `500 28px ${BODY}`;
   y = wrap(g, f.ingredients, px + 40, y + 90, pw - 80, 36);
   g.font = `italic 400 26px ${BODY}`;
   y = wrap(g, 'Innehåller en källa till fenylalanin. Serveras bäst kyld. Förvaras i rumstemperatur, kylförvaras efter öppning.', px + 40, y + 20, pw - 80, 34);
 
   // barcode
-  const bx = W / 2 - 150, by = H - 330;
+  const bx = W / 2 - 150, by = H - 420;
   g.fillStyle = '#fff';
   g.fillRect(bx - 20, by - 20, 340, 200);
   g.fillStyle = '#111';
@@ -115,7 +115,7 @@ function backCanvas(f, edgeImg) {
   g.fillText('7 350090 ' + String(1000 + f.id.length * 137).slice(0, 4) + ' 2', W / 2, by + 165);
   g.fillStyle = GREEN;
   g.font = `600 64px ${HEAD}`;
-  g.fillText('1L', W / 2, H - 100);
+  g.fillText('1L', W / 2, H - 140);
   return cv;
 }
 
@@ -126,34 +126,46 @@ function sideCanvas(f, edgeImg, variant) {
   const g = cv.getContext('2d');
   g.fillStyle = f.color;
   g.fillRect(0, 0, W, H);
+  // wrap the illustrated edge of the front all the way across the side,
+  // alternating mirrored strips so the artwork joins seamlessly at the corners
+  const strips = 5, sw = W / strips;
+  for (let i = 0; i < strips; i++) {
+    g.save();
+    const mirrored = (i + (variant ? 1 : 0)) % 2 === 0;
+    if (mirrored) { g.translate((i + 1) * sw, 0); g.scale(-1, 1); } else g.translate(i * sw, 0);
+    // skip the top quarter of the strip, where the cream logo arch reaches the edge
+    const sy = edgeImg.height * 0.27;
+    g.drawImage(edgeImg, 0, sy, edgeImg.width, edgeImg.height - sy, 0, 0, sw + 1, H);
+    g.restore();
+  }
   g.save();
-  if (variant) { g.translate(W, 0); g.scale(-1, 1); }
-  g.drawImage(edgeImg, 0, 0, edgeImg.width, edgeImg.height, 0, 0, 190, H);
-  g.restore();
+  g.shadowColor = 'rgba(0,0,0,0.12)';
+  g.shadowBlur = 16;
   g.fillStyle = CREAM;
-  roundRect(g, 150, 260, W - 300, H - 520, 40);
+  roundRect(g, 190, 230, W - 380, H - 460, 40);
   g.fill();
+  g.restore();
   g.save();
   g.translate(W / 2, H / 2);
   g.rotate(-Math.PI / 2);
   g.fillStyle = GREEN;
   g.textAlign = 'center';
   if (!variant) {
-    g.font = `600 150px ${HEAD}`;
-    g.fillText('ZERO SUGAR', 0, -20);
-    g.font = `500 80px ${HEAD}`;
-    g.fillText(`${f.vitamins} ADDED VITAMINS* · ${f.kcal} KCAL`, 0, 90);
+    g.font = `600 140px ${HEAD}`;
+    g.fillText('ZERO SUGAR', 0, 10);
+    g.font = `500 56px ${HEAD}`;
+    g.fillText(`${f.vitamins} ADDED VITAMINS* · ${f.kcal} KCAL`, 0, 86);
   } else {
     g.font = `600 140px ${HEAD}`;
-    g.fillText('HERO TASTE', 0, -20);
-    g.font = `400 62px ${BODY}`;
-    g.fillText('Fruit drink · Fruktdryck · 1L', 0, 80);
+    g.fillText('HERO TASTE', 0, 10);
+    g.font = `400 52px ${BODY}`;
+    g.fillText('Fruit drink · Fruktdryck · 1L', 0, 84);
   }
   g.restore();
   g.fillStyle = GREEN;
   g.textAlign = 'center';
   g.font = `600 60px ${HEAD}`;
-  g.fillText(variant ? 'LOWCALY' : '♻', W / 2, H - 150);
+  g.fillText(variant ? 'LOWCALY' : '1L', W / 2, H - 290);
   return cv;
 }
 
@@ -217,6 +229,7 @@ const imgCache = {};
 function loadImage(src) {
   return imgCache[src] || (imgCache[src] = new Promise((res, rej) => {
     const i = new Image();
+    i.crossOrigin = 'anonymous'; // images may be served from another origin (e.g. raw.githubusercontent)
     i.onload = () => res(i);
     i.onerror = rej;
     i.src = src;
@@ -247,7 +260,7 @@ export async function buildCarton(f, renderer) {
     load(`${base}-top.jpg`, renderer),
     loadImage(`${base}-edge.jpg`)
   ]);
-  const back = canvasTex(backCanvas(f, edgeImg), renderer);
+  const back = canvasTex(backCanvas(f, front.image), renderer);
   const right = canvasTex(sideCanvas(f, edgeImg, false), renderer);
   const left = canvasTex(sideCanvas(f, edgeImg, true), renderer);
 

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <base href="../">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carton Lab</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Crimson+Pro:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>html, body { margin: 0; height: 100%; background: #f6dfe8; } canvas { display: block; width: 100%; height: 100%; }</style>
+  <script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  } }
+  </script>
+</head>
+<body>
+  <!-- Dev page: one pack seen from front, side, back and three-quarter, for checking the wrap-around artwork. -->
+  <canvas id="c"></canvas>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+    import { buildCarton } from './js/carton.js';
+    import { FLAVORS } from './js/data.js';
+
+    await document.fonts.load('600 40px "Barlow Condensed"');
+    await document.fonts.load('400 20px "Crimson Pro"');
+    const id = new URLSearchParams(location.search).get('f') || 'cherry';
+    const flavor = FLAVORS.find((f) => f.id === id);
+    const canvas = document.getElementById('c');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.toneMapping = THREE.NeutralToneMapping;
+    const scene = new THREE.Scene();
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+    const key = new THREE.DirectionalLight('#fff4e6', 2.4);
+    key.position.set(-3.5, 5, 6);
+    scene.add(key);
+    const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+    camera.position.set(0, 0.8, 11);
+    const controls = new OrbitControls(camera, canvas);
+    controls.update();
+    [0, Math.PI / 2, Math.PI, -0.6].forEach(async (ry, i) => {
+      const c = await buildCarton(flavor, renderer);
+      c.position.x = (i - 1.5) * 1.6;
+      c.rotation.y = ry;
+      scene.add(c);
+    });
+    function resize() {
+      renderer.setSize(innerWidth, innerHeight, false);
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+    }
+    resize();
+    addEventListener('resize', resize);
+    renderer.setAnimationLoop(() => renderer.render(scene, camera));
+  </script>
+</body>
+</html>

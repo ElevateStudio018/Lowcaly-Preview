@@ -22,13 +22,13 @@ $$('#menu a').forEach((a) => a.addEventListener('click', () => {
 const titles = $('.story__titles');
 const panels = $('#storyPanels');
 const dots = $('#storyDots');
-const STEPS = FLAVORS.length + 1;
+const STEPS = FLAVORS.length;
 $('#story').style.setProperty('--steps', STEPS);
 
 FLAVORS.forEach((f, i) => {
-  const step = i + 1;
-  // the pack sits right on odd steps, so its copy goes left (and vice versa)
-  const right = !isMobile && step % 2 === 0;
+  const step = i;
+  // the pack sits right on even steps, so its copy goes left (and vice versa)
+  const right = !isMobile && step % 2 === 1;
   titles.insertAdjacentHTML('beforeend',
     `<div class="flavor-title" data-step="${step}" style="--c:${f.deep}">${f.name}<small>${f.category} · Zero sugar</small></div>`);
   panels.insertAdjacentHTML('beforeend', `
@@ -47,7 +47,7 @@ FLAVORS.forEach((f, i) => {
       </ul>
     </div>`);
 });
-['Start', ...FLAVORS.map((f) => f.name)].forEach((name, i) => {
+FLAVORS.map((f) => f.name).forEach((name, i) => {
   dots.insertAdjacentHTML('beforeend', `<li><button data-step="${i}" aria-label="${name}"><span>${name}</span></button></li>`);
 });
 
@@ -63,9 +63,8 @@ const mix = (a, b, t) => {
   const A = hex(a), B = hex(b);
   return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`;
 };
-const BG = ['#004a3b', ...FLAVORS.map((f) => f.bg)];
-const BLOB = ['#fff3e3', ...FLAVORS.map((f) => f.color)];
-const INK = ['#fff3e3', ...FLAVORS.map((f) => f.text)];
+const BG = FLAVORS.map((f) => f.bg);
+const INK = FLAVORS.map((f) => f.text);
 const at = (arr, f) => {
   const i = clamp(Math.floor(f), 0, arr.length - 1), j = clamp(i + 1, 0, arr.length - 1);
   const t = f - Math.floor(f);
@@ -97,28 +96,24 @@ function blob(t, seed) {
 const stage = $('.story__stage');
 const storyBg = $('#storyBg');
 const blobEl = $('#storyBlob');
-const tip = $('#storyTip');
 let story = null;
-let tipShown = false;
 const sp = {};
 
-const heroBg = $('#heroBg');
 function updateOverlay(f) {
   storyBg.style.background = at(BG, f);
-  heroBg.style.opacity = 1 - clamp(f / 0.85, 0, 1);
   const ink = at(INK, f);
   stage.style.setProperty('--dot', ink);
   stage.style.color = ink;
 
   // blob follows the active pack
-  const active = clamp(Math.round(f), 1, FLAVORS.length) - 1;
-  if (story && f > 0.35) {
+  const active = clamp(Math.round(f), 0, FLAVORS.length - 1);
+  if (story) {
     story.screenOf(active, sp);
-    const d = f - (active + 1);
+    const d = f - active;
     const s = clamp(1 - Math.abs(d) * 1.8, 0, 1);
     blobEl.style.transform = `translate(${sp.x}px, ${sp.y}px) translate(-50%,-50%) scale(${0.4 + s * 0.6}) rotate(${d * 90}deg)`;
     blobEl.style.opacity = s;
-    blobEl.style.setProperty('--blob', FLAVORS[active].color);
+    blobPath.style.fill = FLAVORS[active].color;
   } else {
     blobEl.style.opacity = 0;
   }
@@ -129,9 +124,7 @@ function updateOverlay(f) {
     const o = clamp(1 - Math.abs(d) * 1.6, 0, 1);
     el.style.opacity = o;
     const y = d * -38;
-    el.style.transform = el.classList.contains('hero-type')
-      ? `translateY(calc(${isMobile ? 0 : -58}% + ${y * 0.8}vh)) scale(${1 + Math.max(0, d) * 0.12})`
-      : `translateY(calc(-50% + ${y}vh)) scale(${1 + Math.abs(d) * 0.15})`;
+    el.style.transform = `translateY(calc(-50% + ${y}vh)) scale(${1 + Math.abs(d) * 0.15})`;
     el.style.visibility = o > 0.001 ? 'visible' : 'hidden';
   });
   stepEls.panels.forEach((el) => {
@@ -145,7 +138,6 @@ function updateOverlay(f) {
   const cur = Math.round(f);
   stepEls.dots.forEach((b, i) => b.classList.toggle('is-active', i === cur));
 
-  if (!tipShown && f > 0.8) { tipShown = true; tip.classList.add('is-on'); setTimeout(() => tip.classList.remove('is-on'), 5000); }
 }
 
 // ---------------------------------------------------------------- scroll
@@ -158,6 +150,10 @@ function storyProgress() {
 }
 function onScroll() {
   if (story) story.setProgress(storyProgress());
+  // hero photo drifts slower than the page
+  const h = $('.hero__media');
+  const hr = $('.hero').getBoundingClientRect();
+  if (hr.bottom > 0) h.style.transform = `translateY(${scrollY * 0.3}px)`;
   // about image parallax
   const m = $('.about__media img');
   const r = m.parentElement.getBoundingClientRect();
@@ -183,25 +179,15 @@ function gotoStep(step) {
   if (lenis) lenis.scrollTo(top, { duration: 1.6 }); else scrollTo({ top, behavior: 'smooth' });
 }
 stepEls.dots.forEach((b) => b.addEventListener('click', () => gotoStep(+b.dataset.step)));
-$$('[data-goto]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); gotoStep(+a.dataset.goto); }));
-
-// ---------------------------------------------------------------- hero: name of the pack facing us
-const heroIdx = $('#heroIdx'), heroName = $('#heroName');
-let heroFront = 0, swapTimer;
-function onHeroFront(j) {
-  if (j === heroFront) return;
-  heroFront = j;
-  heroName.classList.add('is-swap');
-  clearTimeout(swapTimer);
-  swapTimer = setTimeout(() => {
-    heroName.textContent = FLAVORS[j].name;
-    heroIdx.textContent = String(j + 1).padStart(2, '0');
-    heroName.classList.remove('is-swap');
-  }, 220);
-}
+$$('a[href^="#"]').forEach((a) => a.addEventListener('click', (e) => {
+  const el = a.getAttribute('href').length > 1 && $(a.getAttribute('href'));
+  if (!el || !lenis) return;
+  e.preventDefault();
+  lenis.scrollTo(el, { duration: 1.6, offset: el.id === 'story' ? 0 : -70 });
+}));
 
 // ---------------------------------------------------------------- custom cursor + magnetic buttons
-const cursor = $('#cursor'), cursorLabel = $('#cursorLabel');
+const cursor = $('#cursor');
 if (matchMedia('(hover: hover) and (pointer: fine)').matches && !reducedMotion) {
   document.body.classList.add('has-cursor');
   const dot = cursor.firstElementChild, ring = cursor.lastElementChild;
@@ -212,12 +198,12 @@ if (matchMedia('(hover: hover) and (pointer: fine)').matches && !reducedMotion) 
     dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%,-50%)`;
     ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%,-50%)`;
     const el = document.elementFromPoint(mx, my);
-    const onDark = el?.closest('.footer, .split__body, .marquee, .ig__text, .loader') || (el?.closest('.story') && storyProgress() < 0.5);
+    const onDark = el?.closest('.footer, .split__body, .marquee, .ig__text, .loader, .hero');
     const b = document.body.classList;
-    const label = b.contains('is-grabbing') ? 'Släpp' : b.contains('is-grabbable') ? 'Dra' : b.contains('is-spinnable') ? 'Snurra' : '';
-    cursor.classList.toggle('is-label', !!label);
-    cursor.classList.toggle('is-link', !label && !!el?.closest('a, button'));
-    if (label) cursorLabel.textContent = label;
+    // grabbable fruit/packs just get a bigger ring – no text on the cursor
+    cursor.classList.toggle('is-grab', b.contains('is-grabbable') || b.contains('is-grabbing'));
+    cursor.classList.toggle('is-down', b.contains('is-grabbing'));
+    cursor.classList.toggle('is-link', !!el?.closest('a, button'));
     cursor.style.setProperty('--cursor', onDark ? '#fff3e3' : (el?.closest('.story') ? stage.style.getPropertyValue('--dot') || '#005745' : '#005745'));
     cursor.style.setProperty('--cursor-ink', onDark ? '#005745' : '#fff3e3');
     requestAnimationFrame(loop);
@@ -269,6 +255,23 @@ const io = new IntersectionObserver((entries) => {
 }, { rootMargin: '0px 0px -8% 0px' });
 $$('.reveal, .split').forEach((el) => io.observe(el));
 
+// ---------------------------------------------------------------- hero video
+// The poster image paints first; the right-sized loop fades in once it can play.
+const heroVideo = $('#heroVideo');
+if (heroVideo && !reducedMotion && !navigator.connection?.saveData) {
+  const mobile = matchMedia('(max-width: 760px)').matches;
+  heroVideo.poster = mobile ? 'assets/img/hero-mobile.webp' : 'assets/img/hero.webp';
+  if (mobile) $('.hero__media img').src = 'assets/img/hero-mobile.webp';
+  heroVideo.src = mobile ? heroVideo.dataset.mobile : heroVideo.dataset.desktop;
+  heroVideo.preload = 'auto';
+  heroVideo.addEventListener('playing', () => heroVideo.classList.add('is-playing'), { once: true });
+  heroVideo.play().catch(() => {});
+  // pause off-screen to save battery
+  new IntersectionObserver(([e]) => (e.isIntersecting ? heroVideo.play().catch(() => {}) : heroVideo.pause())).observe(heroVideo);
+} else if (matchMedia('(max-width: 760px)').matches) {
+  $('.hero__media img').src = 'assets/img/hero-mobile.webp';
+}
+
 // ---------------------------------------------------------------- boot
 const loader = $('#loader'), barEl = $('#loaderBar'), pct = $('#loaderPct');
 // the bar and the counter animate towards whatever stage loading has reached
@@ -312,7 +315,6 @@ async function boot() {
       canvas: $('#storyCanvas'),
       flavors: FLAVORS,
       reducedMotion,
-      onHeroFront,
       onProgress: updateOverlay
     });
     new IntersectionObserver(([e]) => story.setRunning(e.isIntersecting)).observe(storySection);

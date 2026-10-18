@@ -12,7 +12,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const NO_SMOOTH = new URLSearchParams(location.search).has('still');
 const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-export async function createStory({ canvas, flavors, onProgress, onHeroFront, reducedMotion }) {
+export async function createStory({ canvas, flavors, onProgress, reducedMotion }) {
   const isMobile = matchMedia('(max-width: 760px)').matches;
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.75 : 2));
@@ -56,7 +56,7 @@ export async function createStory({ canvas, flavors, onProgress, onHeroFront, re
     tilt.add(mesh);
     holder.add(tilt);
     scene.add(holder);
-    return { mesh, holder, tilt, step: j + 1, rot: new THREE.Vector2(), rotVel: new THREE.Vector2(), rotTarget: new THREE.Vector2() };
+    return { mesh, holder, tilt, step: j, rot: new THREE.Vector2(), rotVel: new THREE.Vector2(), rotTarget: new THREE.Vector2() };
   });
 
   // ------------------------------------------------------------- fruits
@@ -110,46 +110,17 @@ export async function createStory({ canvas, flavors, onProgress, onHeroFront, re
   resize();
   addEventListener('resize', resize);
 
-  const sideOf = (step) => (isMobile ? 0 : (step % 2 ? 1 : -1));
+  const sideOf = (step) => (isMobile ? 0 : (step % 2 ? -1 : 1));
   const restX = (step) => sideOf(step) * Math.min(visW * 0.2, 2.1);
-
-  // Hero: the packs stand on a slowly turning carousel, each facing outwards,
-  // so the ones at the back show their real nutrition panels.
-  let carousel = 0, carouselVel = 0, carouselDrag = false, lastDragX = 0;
-  const HERO_Y = isMobile ? -0.55 : -0.12;
-  const HERO_S = isMobile ? 0.5 : 0.7;
-  const wrapAngle = (a) => Math.atan2(Math.sin(a), Math.cos(a));
-  function heroPose(j, out) {
-    const n = flavors.length;
-    const R = isMobile ? 1.0 : Math.min(2.05, visW * 0.21);
-    const th = wrapAngle(carousel + (j / n) * Math.PI * 2);
-    out.x = Math.sin(th) * R;
-    out.y = HERO_Y;
-    out.z = Math.cos(th) * R - R * 0.35;
-    out.ry = th * 0.55; // turned partly towards the camera so fronts stay readable
-    out.rz = 0;
-    out.rx = 0;
-    out.s = HERO_S;
-    out.th = th;
-    return out;
-  }
-
-  // Soft contact shadows on an invisible floor under the carousel.
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: 0.32, color: '#00140f' }));
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.y = HERO_Y - (CARTON.h * HERO_S) / 2 - 0.005;
-  floor.receiveShadow = true;
-  scene.add(floor);
 
   function flowPose(step, d, out) {
     const dc = clamp(d, -1.25, 1.25);
-    out.th = 0;
     const e = Math.sign(dc) * easeInOut(Math.min(1, Math.abs(dc)));
     out.x = restX(step) + e * -sideOf(step) * 0.8;
     out.y = dc * visH * 1.02 + (isMobile ? -0.15 : 0);
     out.z = -Math.abs(e) * 1.2;
     const spin = reducedMotion ? 0.3 : Math.PI * 1.6;
-    out.ry = -0.38 * sideOf(step || 1) * (isMobile ? 0 : 1) - 0.18 + e * spin;
+    out.ry = -0.38 * sideOf(step) - 0.18 + e * spin;
     out.rz = -sideOf(step) * 0.07 - e * 0.45;
     out.rx = e * 0.25;
     out.s = isMobile ? 0.82 : 1;
@@ -189,19 +160,11 @@ export async function createStory({ canvas, flavors, onProgress, onHeroFront, re
 
   addEventListener('pointermove', (e) => {
     updatePointer(e);
-    if (carouselDrag) {
-      const dx = e.clientX - lastDragX;
-      lastDragX = e.clientX;
-      carousel += dx * 0.006;
-      carouselVel = dx * 0.006 * 60;
-      return;
-    }
     if (dragFruit || dragCarton) return;
     if (!pointerInside || e.pointerType === 'touch') return;
     const hit = pick();
     hoverFruit = hit?.fruit || null;
     document.body.classList.toggle('is-grabbable', !!hit);
-    document.body.classList.toggle('is-spinnable', !hit && progress < 0.35 && !e.target.closest('a,button,input'));
   }, { passive: true });
 
   addEventListener('pointerdown', (e) => {
@@ -209,13 +172,6 @@ export async function createStory({ canvas, flavors, onProgress, onHeroFront, re
     if (!pointerInside) return;
     if (e.target.closest('a,button,input,label')) return;
     const hit = pick();
-    if (progress < 0.35 && !hit?.fruit) {
-      // in the hero, dragging anywhere spins the carousel
-      carouselDrag = true;
-      lastDragX = e.clientX;
-      document.body.classList.add('is-grabbing');
-      return;
-    }
     if (!hit) return;
     if (e.pointerType === 'touch') {
       // tap = gentle poke
@@ -236,13 +192,12 @@ export async function createStory({ canvas, flavors, onProgress, onHeroFront, re
     if (dragFruit) dragFruit.wobbleVel.add(new THREE.Vector3(4, 6, 2));
     dragFruit = null;
     dragCarton = null;
-    carouselDrag = false;
     document.body.classList.remove('is-grabbing');
   });
 
   // ------------------------------------------------------------- loop
   let progress = 0, progressSmooth = 0, running = true, last = performance.now();
-  const pose = {}, poseB = {};
+  const pose = {};
 
   function setProgress(p) { progress = p; }
   function setRunning(v) { running = v; if (v) { last = performance.now(); requestAnimationFrame(frame); } }
@@ -256,46 +211,20 @@ export async function createStory({ canvas, flavors, onProgress, onHeroFront, re
     progressSmooth = NO_SMOOTH ? progress : lerp(progressSmooth, progress, 1 - Math.pow(0.0008, dt));
     if (Math.abs(progressSmooth - progress) < 0.0005) progressSmooth = progress;
     const f = progressSmooth;
-    const heroBlend = smoothstep(0, 1, f);
     onProgress?.(f);
 
-    // carousel: idle spin + inertia from drags
-    if (!carouselDrag) {
-      const idleSpin = reducedMotion ? 0 : 0.16;
-      carouselVel = lerp(carouselVel, idleSpin, 1 - Math.pow(0.25, dt));
-      carousel += carouselVel * dt;
-    }
-    if (onHeroFront && f < 1) {
-      let best = 0, bestZ = -Infinity;
-      for (let j = 0; j < flavors.length; j++) {
-        const z = Math.cos(carousel + (j / flavors.length) * Math.PI * 2);
-        if (z > bestZ) { bestZ = z; best = j; }
-      }
-      onHeroFront(best);
-    }
-
     pointerSmooth.lerp(pointer, 1 - Math.pow(0.02, dt));
-    // hero camera looks slightly down onto the carousel, then levels out
-    const camLift = lerp(isMobile ? 0.7 : 1.05, 0, heroBlend);
     camera.position.x = pointerSmooth.x * 0.18;
-    camera.position.y = pointerSmooth.y * 0.12 + camLift;
-    camera.lookAt(0, lerp(HERO_Y * 0.6, 0, heroBlend), 0);
-    floor.material.opacity = 0.32 * (1 - smoothstep(0, 0.45, f));
-    floor.visible = f < 0.6;
+    camera.position.y = pointerSmooth.y * 0.12;
+    camera.lookAt(0, 0, 0);
 
     items.forEach((it, j) => {
       const d = f - it.step;
-      heroPose(j, pose);
-      flowPose(it.step, d, poseB);
-      const b = it.step === 1 ? heroBlend : smoothstep(0, 0.7, f);
-      const P = {};
-      for (const k in pose) P[k] = lerp(pose[k], poseB[k], b);
-      // packs at the back of the carousel recede into the green
-      P.s *= lerp(0.92 + 0.08 * Math.cos(pose.th), 1, b);
-      // hero idle float
+      const P = flowPose(it.step, d, pose);
+      // idle float
       const idle = reducedMotion ? 0 : 1;
-      P.y += Math.sin(t * 0.9 + j) * 0.04 * idle * b;
-      P.ry += Math.sin(t * 0.5 + j * 1.3) * 0.05 * idle * b;
+      P.y += Math.sin(t * 0.9 + j) * 0.04 * idle;
+      P.ry += Math.sin(t * 0.5 + j * 1.3) * 0.05 * idle;
 
       it.holder.position.set(P.x, P.y, P.z);
       it.holder.rotation.set(P.rx, P.ry, P.rz);
@@ -306,7 +235,7 @@ export async function createStory({ canvas, flavors, onProgress, onHeroFront, re
       // pointer tilt / drag springs
       if (dragCarton === it) {
         it.rotTarget.set(clamp((pointer.x - dragStart.x) * 2.2, -0.7, 0.7), clamp(-(pointer.y - dragStart.y) * 1.4, -0.35, 0.35));
-      } else if (Math.abs(d) < 0.5 || f < 0.5) {
+      } else if (Math.abs(d) < 0.5) {
         it.rotTarget.set(pointerSmooth.x * 0.22, -pointerSmooth.y * 0.1);
       } else it.rotTarget.set(0, 0);
       const ax = 70 * (it.rotTarget.x - it.rot.x) - 9 * it.rotVel.x;
@@ -316,31 +245,26 @@ export async function createStory({ canvas, flavors, onProgress, onHeroFront, re
       it.tilt.rotation.set(it.rot.y, it.rot.x, 0);
 
       // fruit cluster follows the carton (not its spin)
-      const vis = Math.max(1 - smoothstep(0.15, 0.95, Math.abs(d)), (1 - heroBlend) * 0.75);
+      const vis = 1 - smoothstep(0.15, 0.95, Math.abs(d));
       it.fruitGroup.position.set(P.x, P.y + (isMobile ? 0 : d * 0.6), P.z * 0.5);
       it.fruitGroup.userData.vis = onScreen ? vis : 0;
       it.fruitGroup.userData.d = d;
-      it.fruitGroup.userData.blend = b;
       it.fruitGroup.visible = onScreen && vis > 0.01;
     });
 
     for (const fr of fruits) {
       const g = fr.group.userData;
-      // only a few fruit per pack in the crowded hero line-up
-      const heroHidden = fr.index > 2 || fr.rest.y < -0.2; // keep the hero's lower third clear for copy
-      const targetScale = g.vis * (g.blend < 0.5 && heroHidden ? smoothstep(0.15, 0.5, g.blend) : 1);
+      const targetScale = g.vis;
       fr.scale = NO_SMOOTH ? targetScale : lerp(fr.scale, targetScale, 1 - Math.pow(0.002, dt));
       const s = fr.scale < 0.002 ? 0.0001 : fr.scale;
       // pop-in with a little overshoot
-      fr.pivot.scale.setScalar(s * (1 + Math.sin(s * Math.PI) * 0.12) * lerp(0.62, 1, g.blend));
+      fr.pivot.scale.setScalar(s * (1 + Math.sin(s * Math.PI) * 0.12));
 
       // float
       const bob = reducedMotion ? 0 : Math.sin(t * fr.speed + fr.phase) * 0.08;
-      // in the hero all packs stand in a row, so their fruit hugs them tightly
-      const rx = lerp(0.62, 1, g.blend), ry = lerp(0.42, 1, g.blend);
-      fr.pivot.position.set(fr.rest.x * rx, fr.rest.y * ry + bob, fr.rest.z * rx);
+      fr.pivot.position.set(fr.rest.x, fr.rest.y + bob, fr.rest.z);
       // scroll scatter: fruits fly outward as the pack spins away
-      const sc = clamp(Math.abs(g.d ?? 0) - 0.1, 0, 1) * 1.6 * g.blend;
+      const sc = clamp(Math.abs(g.d ?? 0) - 0.1, 0, 1) * 1.6;
       fr.pivot.position.x += Math.sign(fr.rest.x || 1) * sc;
       fr.pivot.position.y += (fr.rest.y) * sc * 0.6;
 
