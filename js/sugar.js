@@ -53,10 +53,11 @@ function makeSlots() {
 
 export function createSugarJar(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const lowPower = matchMedia('(max-width: 760px), (pointer: coarse)').matches;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, lowPower ? 1.25 : 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NeutralToneMapping;
-  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = !lowPower;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();

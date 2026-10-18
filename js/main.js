@@ -5,6 +5,7 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const isMobile = matchMedia('(max-width: 760px)').matches;
+const isTouch = matchMedia('(pointer: coarse)').matches;
 
 // ---------------------------------------------------------------- header menu
 const header = $('#header');
@@ -99,7 +100,12 @@ const blobEl = $('#storyBlob');
 let story = null;
 const sp = {};
 
+let lastF = -1;
 function updateOverlay(f) {
+  // the 3D loop calls this every frame; only touch the DOM when the scroll moved
+  const moved = Math.abs(f - lastF) > 0.0005;
+  if (!moved) { if (!isTouch) blobPath.setAttribute('d', blob(performance.now() / 1000, clamp(Math.round(f), 0, FLAVORS.length - 1) * 3.1)); return; }
+  lastF = f;
   storyBg.style.background = at(BG, f);
   const ink = at(INK, f);
   stage.style.setProperty('--dot', ink);
@@ -143,10 +149,15 @@ function updateOverlay(f) {
 // ---------------------------------------------------------------- scroll
 const storySection = $('#story');
 let lenis = null;
+// one step = one 100svh of scroll; measured from the section so the moving
+// mobile URL bar (which changes innerHeight) can't make the story jump
+let stepPx = innerHeight;
+const measureStep = () => { stepPx = storySection.offsetHeight / (STEPS + 0.6); };
+measureStep();
+addEventListener('resize', measureStep);
 function storyProgress() {
   const r = storySection.getBoundingClientRect();
-  const vh = innerHeight;
-  return clamp(-r.top / vh, 0, STEPS - 1);
+  return clamp(-r.top / stepPx, 0, STEPS - 1);
 }
 function onScroll() {
   if (story) story.setProgress(storyProgress());
@@ -163,19 +174,20 @@ function onScroll() {
 // gentle snap to the nearest flavor once scrolling settles
 let snapTimer;
 function scheduleSnap() {
+  if (isTouch) return; // fighting momentum scrolling on phones feels like lag
   clearTimeout(snapTimer);
   snapTimer = setTimeout(() => {
     const f = storyProgress();
     const target = Math.round(f);
     if (f <= 0 || f >= STEPS - 1 || Math.abs(f - target) < 0.02 || Math.abs(f - target) > 0.38) return;
-    const top = storySection.offsetTop + target * innerHeight;
+    const top = storySection.offsetTop + target * stepPx;
     if (lenis) lenis.scrollTo(top, { duration: 0.9 });
     else scrollTo({ top, behavior: 'smooth' });
   }, 160);
 }
 
 function gotoStep(step) {
-  const top = storySection.offsetTop + step * innerHeight;
+  const top = storySection.offsetTop + step * stepPx;
   if (lenis) lenis.scrollTo(top, { duration: 1.6 }); else scrollTo({ top, behavior: 'smooth' });
 }
 stepEls.dots.forEach((b) => b.addEventListener('click', () => gotoStep(+b.dataset.step)));
@@ -355,7 +367,8 @@ bar.style.width = '20%';
 async function boot() {
   try {
     const { default: Lenis } = await import('lenis');
-    if (!reducedMotion) {
+    // smooth wheel scrolling on desktop only; phones keep their native scroll
+    if (!reducedMotion && !isTouch) {
       lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 0.9 });
       const raf = (t) => { lenis.raf(t); requestAnimationFrame(raf); };
       requestAnimationFrame(raf);

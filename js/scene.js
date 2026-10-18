@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { buildCarton, CARTON } from './carton.js';
-import { FRUIT_FACTORY } from './fruits.js';
+import { FRUIT_FACTORY, setDetail } from './fruits.js';
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const smoothstep = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -14,12 +14,16 @@ const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) 
 
 export async function createStory({ canvas, flavors, onProgress, reducedMotion }) {
   const isMobile = matchMedia('(max-width: 760px)').matches;
+  // phones and low-core devices get a lighter profile: lower resolution,
+  // no shadow maps, coarser fruit meshes and no sheen
+  const lowPower = isMobile || matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency || 8) <= 4;
+  setDetail(lowPower ? 0.45 : 1);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.75 : 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, lowPower ? 1.5 : 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.toneMappingExposure = 1.05;
-  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = !lowPower;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
@@ -96,10 +100,20 @@ export async function createStory({ canvas, flavors, onProgress, reducedMotion }
     });
   });
 
+  if (lowPower) {
+    scene.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow = o.receiveShadow = false;
+      for (const m of [].concat(o.material)) if (m.isMeshPhysicalMaterial) { m.sheen = 0; m.clearcoat = 0; m.needsUpdate = true; }
+    });
+  }
+
   // ------------------------------------------------------------- layout
   let vw = 1, vh = 1, visH = 1, visW = 1;
   function resize() {
     const r = canvas.parentElement.getBoundingClientRect();
+    // iOS fires resize whenever the URL bar moves; the svh-sized stage doesn't change, so skip
+    if (Math.abs(r.width - vw) < 1 && Math.abs(r.height - vh) < 1) return;
     vw = r.width; vh = r.height;
     renderer.setSize(vw, vh, false);
     camera.aspect = vw / vh;

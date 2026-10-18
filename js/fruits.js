@@ -25,6 +25,11 @@ function fbm(x, y, z) {
 }
 const rand = (a, b) => a + Math.random() * (b - a);
 
+// Geometry detail: 1 on desktop; phones call setDetail(<1) before building fruit.
+let DETAIL = 1;
+export function setDetail(d) { DETAIL = d; }
+const seg = (n) => Math.max(6, Math.round(n * DETAIL));
+
 function deform(geo, fn) {
   const p = geo.attributes.position, v = new THREE.Vector3();
   for (let i = 0; i < p.count; i++) {
@@ -207,7 +212,7 @@ function cached(key, fn) { return texCache[key] || (texCache[key] = fn()); }
 // ---------------------------------------------------------------- fruits
 
 function cherrySingle() {
-  const geo = deform(new THREE.SphereGeometry(1, 72, 54), (v) => {
+  const geo = deform(new THREE.SphereGeometry(1, seg(72), seg(54)), (v) => {
     const top = Math.exp(-(1 - v.y) / 0.07);
     v.y -= top * 0.32;
     v.y -= Math.exp(-(1 + v.y) / 0.12) * 0.05;
@@ -248,7 +253,7 @@ function strawR(t) {
 }
 
 export function strawberry({ half = false } = {}) {
-  const ROWS = 18, COLS = 20, PTS = 96, SEG = 144;
+  const ROWS = 18, COLS = 20, PTS = seg(96), SEG = seg(144);
   const prof = [];
   for (let i = 0; i <= PTS; i++) {
     const t = i / PTS;
@@ -330,7 +335,7 @@ export function strawberry({ half = false } = {}) {
     for (let i = prof.length - 1; i >= 0; i--) shape.lineTo(-prof[i].x, prof[i].y);
     const fg = new THREE.ShapeGeometry(shape, 48);
     // subdivide the flat face so the vertex-colour gradient has resolution
-    const face = new THREE.PlaneGeometry(1.7, 1.8, 90, 96).translate(0, -0.1, 0);
+    const face = new THREE.PlaneGeometry(1.7, 1.8, seg(90), seg(96)).translate(0, -0.1, 0);
     const fp = face.attributes.position;
     for (let i = 0; i < fp.count; i++) {
       const x = fp.getX(i), y = fp.getY(i), t = (y + 1) / 1.75;
@@ -377,7 +382,7 @@ export function raspberry() {
   g.add(core);
   // each drupelet is a little juice bead: slightly tear-shaped, glossy, with a
   // reddish emissive term faking light scattering through the flesh
-  const dGeo = deform(new THREE.SphereGeometry(0.2, 24, 18), (v) => {
+  const dGeo = deform(new THREE.SphereGeometry(0.2, seg(24), seg(18)), (v) => {
     v.z *= 0.9 + (v.y < 0 ? 0 : 0);
     v.multiplyScalar(1 + (fbm(v.x * 20, v.y * 20, v.z * 20) - 0.5) * 0.05);
   });
@@ -445,7 +450,7 @@ function bloomTexture() {
 
 export function blueberry(dark = false) {
   // crown: a sunken star with five dried sepal tips around the rim
-  const geo = deform(new THREE.SphereGeometry(1, 96, 72), (v) => {
+  const geo = deform(new THREE.SphereGeometry(1, seg(96), seg(72)), (v) => {
     v.y *= 0.82;
     const rTop = Math.hypot(v.x, v.z);
     if (v.y > 0) {
@@ -495,7 +500,7 @@ function pearProfile() {
 
 export function pear({ half = false } = {}) {
   const prof = pearProfile();
-  const geo = new THREE.LatheGeometry(prof, 72, 0, half ? Math.PI : Math.PI * 2);
+  const geo = new THREE.LatheGeometry(prof, seg(72), 0, half ? Math.PI : Math.PI * 2);
   deform(geo, (v) => {
     v.x += 0.08 * Math.pow(Math.max(0, v.y), 2);
     const k = 1 + (fbm(v.x * 2, v.y * 2, v.z * 2) - 0.5) * 0.06;
@@ -545,7 +550,7 @@ export function pear({ half = false } = {}) {
 }
 
 export function peach({ half = false, white = true } = {}) {
-  const geo = deform(new THREE.SphereGeometry(1, 80, 60, 0, half ? Math.PI : Math.PI * 2), (v) => {
+  const geo = deform(new THREE.SphereGeometry(1, seg(80), seg(60), 0, half ? Math.PI : Math.PI * 2), (v) => {
     const crease = Math.exp(-Math.pow(v.x / 0.1, 2)) * smooth(Math.max(0, Math.min(1, v.z + 0.4))) * 0.07;
     v.multiplyScalar(1 - crease);
     v.y -= Math.exp(-(1 - v.y) / 0.06) * 0.14;
@@ -578,7 +583,7 @@ export function peach({ half = false, white = true } = {}) {
     // SphereGeometry's half (phi 0..PI) is cut along z = 0, which is CircleGeometry's own plane
     const face = new THREE.Mesh(fg, new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.12, side: THREE.DoubleSide }));
     g.add(face);
-    const pitGeo = deform(new THREE.SphereGeometry(0.32, 40, 30), (v) => {
+    const pitGeo = deform(new THREE.SphereGeometry(0.32, seg(40), seg(30)), (v) => {
       v.y *= 1.35; v.z *= 0.6;
       v.multiplyScalar(1 + (noise3(v.x * 18, v.y * 18, v.z * 18) - 0.5) * 0.18);
     });
@@ -595,7 +600,7 @@ export function peach({ half = false, white = true } = {}) {
 }
 
 export function mango() {
-  const geo = deform(new THREE.SphereGeometry(1, 80, 60), (v) => {
+  const geo = deform(new THREE.SphereGeometry(1, seg(80), seg(60)), (v) => {
     const y = v.y;
     v.y *= 1.32;
     v.z *= 0.78;
