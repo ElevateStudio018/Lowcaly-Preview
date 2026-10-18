@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fruit Lab</title>
+  <style>html, body { margin: 0; height: 100%; background: #fff3e3; } canvas { display: block; width: 100%; height: 100%; }</style>
+  <script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  } }
+  </script>
+</head>
+<body>
+  <!-- Dev page: every procedural fruit side by side, for tuning materials. -->
+  <canvas id="c"></canvas>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+    import { FRUIT_FACTORY } from '../js/fruits.js';
+
+    const canvas = document.getElementById('c');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.toneMapping = THREE.NeutralToneMapping;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    const scene = new THREE.Scene();
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = 0.85;
+    const key = new THREE.DirectionalLight('#fff4e6', 2.6);
+    key.position.set(-3.5, 5, 6);
+    key.castShadow = true;
+    scene.add(key, new THREE.DirectionalLight('#ffffff', 1.6).translateZ(-6).translateY(3));
+    const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+    camera.position.set(0, 0.4, 7);
+    new OrbitControls(camera, canvas);
+
+    const names = Object.keys(FRUIT_FACTORY);
+    names.forEach((n, i) => {
+      const o = FRUIT_FACTORY[n]();
+      o.position.set((i % 5 - 2) * 1.1, 1 - Math.floor(i / 5) * 1.1, 0);
+      o.scale.multiplyScalar(1.4);
+      o.rotation.y = 0.5;
+      scene.add(o);
+    });
+    function resize() {
+      renderer.setSize(innerWidth, innerHeight, false);
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+    }
+    resize();
+    addEventListener('resize', resize);
+    renderer.setAnimationLoop(() => renderer.render(scene, camera));
+  </script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+<svg height="512" viewBox="0 0 20 16" width="512" xmlns="http://www.w3.org/2000/svg"> <!-- Lines now span from x=0.5 to x=19.5 (19 units long) --> <path d="m19.5 4h-19a.5.5 0 0 1 0-1h19a.5.5 0 0 1 0 1z"></path> <path d="m19.5 9h-19a.5.5 0 0 1 0-1h19a.5.5 0 0 1 0 1z"></path> <path d="m19.5 14h-19a.5.5 0 0 1 0-1h19a.5.5 0 0 1 0 1z"></path> </svg>

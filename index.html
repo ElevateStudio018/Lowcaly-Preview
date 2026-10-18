@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lowcaly – Zero Sugar Hero Taste</title>
+  <meta name="description" content="Upptäck sockerfria produkter från Lowcaly. Fräscha, sockerfria frukost- och fruktdrycker – Zero Sugar. Hero Taste.">
+  <meta name="theme-color" content="#005745">
+  <link rel="icon" href="assets/img/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Crimson+Pro:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+      "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.mjs"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="loader" id="loader" aria-hidden="true">
+    <img src="assets/svg/logo.svg" alt="" width="159" height="49">
+    <div class="loader__bar"><span id="loaderBar"></span></div>
+  </div>
+
+  <div class="topbar">ZERO SUGAR HERO TASTE</div>
+
+  <header class="header" id="header">
+    <div class="header__inner">
+      <span class="header__spacer"></span>
+      <a class="header__logo" href="#top" aria-label="Lowcaly startsida">
+        <img src="assets/svg/logo.svg" alt="Lowcaly" width="159" height="49">
+      </a>
+      <div class="header__actions">
+        <a class="header__lang" href="https://www.lowcaly.com/en/" aria-label="Byt språk">
+          <img src="assets/svg/globe.svg" alt="" width="32" height="32">
+        </a>
+        <button class="header__burger" id="burger" aria-label="Meny" aria-expanded="false" aria-controls="menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <nav class="menu" id="menu" aria-label="Huvudmeny">
+      <ul>
+        <li><a href="#produkter">Produkter</a>
+          <ul>
+            <li><a href="#produkter" data-tab="fruktdryck">Fruktdryck</a></li>
+            <li><a href="#produkter" data-tab="frukostdryck">Frukostdryck</a></li>
+          </ul>
+        </li>
+        <li><a href="#inspiration">Inspiration</a>
+          <ul>
+            <li><a href="#inspiration" data-filter="recept">Recept</a></li>
+            <li><a href="#inspiration" data-filter="artikel">Artiklar</a></li>
+            <li><a href="#inspiration" data-filter="nyhet">Nyheter</a></li>
+          </ul>
+        </li>
+        <li><a href="#om">Om Lowcaly</a></li>
+        <li><a href="https://www.lowcaly.com/sv/kontakt/">Kontakt</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="top">
+    <!-- 3D scroll story -->
+    <section class="story" id="story" aria-label="Våra smaker">
+      <div class="story__stage">
+        <div class="story__bg" id="storyBg"></div>
+        <div class="story__blob" id="storyBlob" aria-hidden="true">
+          <svg viewBox="0 0 400 400"><path id="blobPath" d=""/></svg>
+        </div>
+        <div class="story__titles" aria-hidden="true">
+          <h1 class="hero-title" data-step="0"><span>ZERO SUGAR</span><span>– HERO TASTE</span></h1>
+          <!-- flavor titles injected -->
+        </div>
+        <canvas class="story__canvas" id="storyCanvas"></canvas>
+        <div class="story__panels" id="storyPanels">
+          <div class="panel panel--hero" data-step="0">
+            <p class="panel__lead">Goda vanor ska vara enkla. Fräscha, sockerfria frukost- och fruktdrycker som funkar lika bra till morgonrutinen som när du vill höja lunchen, mellanmålet eller middagen.</p>
+            <a class="btn" href="#produkter">Se alla våra produkter</a>
+            <div class="scroll-hint"><span></span>Scrolla &amp; upptäck smakerna</div>
+          </div>
+          <!-- flavor panels injected -->
+        </div>
+        <ol class="story__dots" id="storyDots" aria-label="Hoppa till smak"></ol>
+        <p class="story__tip" id="storyTip">Psst! Dra i frukterna 🍒</p>
+      </div>
+    </section>
+
+    <!-- Product range -->
+    <section class="products" id="produkter">
+      <div class="container">
+        <h2 class="h-xl reveal">ZERO SUGAR – HERO TASTE</h2>
+        <p class="lead reveal">Lowcaly gör det enkelt att välja sockerfritt. Sortimentet består av smakrika, vitaminberikade fruktdrycker och frukostdrycker – alla sockerfria.</p>
+        <div class="pills reveal" role="tablist">
+          <button class="pill is-active" role="tab" data-tab="alla">Alla</button>
+          <button class="pill" role="tab" data-tab="fruktdryck">Fruktdryck</button>
+          <button class="pill" role="tab" data-tab="frukostdryck">Frukostdryck</button>
+        </div>
+      </div>
+      <div class="shelf" id="shelf"></div>
+      <div class="container center">
+        <a class="btn btn--outline" href="https://www.lowcaly.com/sv/produkter/">Se alla våra produkter</a>
+      </div>
+    </section>
+
+    <!-- News split -->
+    <section class="split" id="nyhet">
+      <div class="split__media">
+        <img src="assets/img/nyhet-cherryberry.webp" alt="Lowcaly Cherry och Mixed Berry i kylskåpsdörren" loading="lazy">
+      </div>
+      <div class="split__body">
+        <h2 class="h-xl reveal">NYHET! CHERRY<br>&amp; MIXED BERRY</h2>
+        <p class="reveal">Mer bär, mer smak – alltid zero sugar. Cherry med frisk smak av solmogna körsbär och Mixed Berry med en balanserad mix av söta och syrliga bär. Två uppfriskande nyheter, berikade med 6 essentiella vitaminer.</p>
+        <a class="btn btn--outline-light reveal" href="https://www.lowcaly.com/sv/nyheter/cherry-mixed-berry-ar-har/">Läs mer om våra smakrika nyheter</a>
+      </div>
+    </section>
+
+    <!-- Inspiration -->
+    <section class="inspiration" id="inspiration">
+      <div class="container">
+        <h2 class="h-xl center reveal">INSPIRATION</h2>
+        <div class="pills center reveal">
+          <button class="pill is-active" data-filter="alla">Alla</button>
+          <button class="pill" data-filter="artikel">Artiklar</button>
+          <button class="pill" data-filter="nyhet">Nyheter</button>
+          <button class="pill" data-filter="recept">Recept</button>
+        </div>
+        <div class="cards" id="cards">
+          <article class="card reveal" data-type="nyhet">
+            <a href="https://www.lowcaly.com/sv/nyheter/cherry-mixed-berry-ar-har/">
+              <div class="card__img"><img src="assets/img/post-cherryberry.webp" alt="" loading="lazy"></div>
+              <span class="card__tag">Nyhet</span>
+              <h3>Cherry &amp; Mixed Berry är här</h3>
+              <p>Mer bär, mer smak – alltid zero sugar. Nu växer Lowcaly-familjen med Cherry och Mixed Berry, två nya fruktiga och…</p>
+              <span class="card__more">Läs mer <svg width="35" height="12" viewBox="0 0 35 14"><line x1="0" y1="8" x2="35" y2="8" stroke="currentColor"/><polyline points="30,4 35,8 30,12" fill="none" stroke="currentColor"/></svg></span>
+            </a>
+          </article>
+          <article class="card reveal" data-type="artikel">
+            <a href="https://www.lowcaly.com/sv/artiklar/apples-pear-en-ny-sockerfri-frukostdryck-i-juicehyllan/">
+              <div class="card__img"><img src="assets/img/post-applepear.webp" alt="" loading="lazy"></div>
+              <span class="card__tag">Artikel</span>
+              <h3>Apples &amp; Pear, en ny sockerfri frukostdryck i juicehyllan</h3>
+              <p>Januari är månaden då många vill börja om på nytt. Men hur gör man för att hitta motivationen och faktiskt…</p>
+              <span class="card__more">Läs mer <svg width="35" height="12" viewBox="0 0 35 14"><line x1="0" y1="8" x2="35" y2="8" stroke="currentColor"/><polyline points="30,4 35,8 30,12" fill="none" stroke="currentColor"/></svg></span>
+            </a>
+          </article>
+          <article class="card reveal" data-type="artikel">
+            <a href="https://www.lowcaly.com/sv/artiklar/nystart-med-anna-haag/">
+              <div class="card__img"><img src="assets/img/post-annahaag.webp" alt="" loading="lazy"></div>
+              <span class="card__tag">Artikel</span>
+              <h3>Nystart med Anna Haag</h3>
+              <p>Januari är månaden då många vill börja om på nytt. Men hur gör man för att hitta motivationen och faktiskt…</p>
+              <span class="card__more">Läs mer <svg width="35" height="12" viewBox="0 0 35 14"><line x1="0" y1="8" x2="35" y2="8" stroke="currentColor"/><polyline points="30,4 35,8 30,12" fill="none" stroke="currentColor"/></svg></span>
+            </a>
+          </article>
+          <article class="card reveal" data-type="recept">
+            <a href="https://www.lowcaly.com/sv/recept/milky-tropical-drink/">
+              <div class="card__img"><img src="assets/img/post-tropical.webp" alt="" loading="lazy"></div>
+              <span class="card__tag">Recept</span>
+              <h3>Milky Tropical Drink</h3>
+              <p>En krämig och fräsch drink med tropiska vibbar – perfekt när du vill ha något lätt, svalkande och lite exotiskt.</p>
+              <span class="card__more">Läs mer <svg width="35" height="12" viewBox="0 0 35 14"><line x1="0" y1="8" x2="35" y2="8" stroke="currentColor"/><polyline points="30,4 35,8 30,12" fill="none" stroke="currentColor"/></svg></span>
+            </a>
+          </article>
+          <article class="card reveal" data-type="artikel">
+            <a href="https://www.lowcaly.com/sv/artiklar/loptips-fran-garmin/">
+              <div class="card__img"><img src="assets/img/post-garmin.webp" alt="" loading="lazy"></div>
+              <span class="card__tag">Artikel</span>
+              <h3>Löptips från Garmin</h3>
+              <p>Kanske har du precis börjat utforska löpningen, eller så är det dags att hitta tillbaka till ett tidigare träningsflow. Oavsett…</p>
+              <span class="card__more">Läs mer <svg width="35" height="12" viewBox="0 0 35 14"><line x1="0" y1="8" x2="35" y2="8" stroke="currentColor"/><polyline points="30,4 35,8 30,12" fill="none" stroke="currentColor"/></svg></span>
+            </a>
+          </article>
+          <article class="card reveal" data-type="recept">
+            <a href="https://www.lowcaly.com/sv/recept/morningsmoothie/">
+              <div class="card__img"><img src="assets/img/post-smoothie.webp" alt="" loading="lazy"></div>
+              <span class="card__tag">Recept</span>
+              <h3>Morning Smoothie</h3>
+              <p>En fruktig och uppfriskande start på dagen med jordgubbar, banan och vår frukostdryck Sunny Orange. Krämigt, gott och fullt av…</p>
+              <span class="card__more">Läs mer <svg width="35" height="12" viewBox="0 0 35 14"><line x1="0" y1="8" x2="35" y2="8" stroke="currentColor"/><polyline points="30,4 35,8 30,12" fill="none" stroke="currentColor"/></svg></span>
+            </a>
+          </article>
+        </div>
+        <div class="center"><a class="btn btn--outline" href="https://www.lowcaly.com/sv/inspiration/">Se mer inspiration</a></div>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section class="about" id="om">
+      <div class="about__media"><img src="assets/img/hero-about.webp" alt="Lowcaly-drycker på ett frukostbord" loading="lazy"></div>
+      <div class="about__body container">
+        <h2 class="h-xl reveal">GODA VANOR SKA VARA ENKLA.</h2>
+        <p class="reveal">Det är precis därför vi skapade Lowcaly. Vi är det sockerfria alternativet som visar att hälsosmart kan vara fullt av smak. Vi utmanar gamla vanor, lämnar det onödiga sockret och skapar drycker för dig som vill ha mer av det goda, utan kompromisser.</p>
+        <p class="about__claim reveal">Zero Sugar. Hero Taste.</p>
+      </div>
+    </section>
+
+    <!-- Instagram -->
+    <section class="instagram">
+      <div class="container">
+        <h2 class="h-xl center reveal">FÖLJ OSS PÅ INSTAGRAM</h2>
+        <div class="ig">
+          <a class="reveal" href="https://www.instagram.com/p/Deh-6LRAURY"><img src="assets/img/ig-4.webp" alt="Instagram-inlägg från Lowcaly" loading="lazy"></a>
+          <a class="reveal" href="https://www.instagram.com/p/DeMGWAvANOh"><img src="assets/img/ig-5.webp" alt="Instagram-inlägg från Lowcaly" loading="lazy"></a>
+          <a class="reveal" href="https://www.instagram.com/p/Dd_OPWwlkHf"><img src="assets/img/ig-3.webp" alt="Instagram-inlägg från Lowcaly" loading="lazy"></a>
+          <a class="reveal ig__text" href="https://www.instagram.com/p/Dd3p_wYD-fn"><span>DEAR<br>APPLES &amp; PEAR<br>LOVERS..</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <img class="footer__logo" src="assets/svg/logo-tagline.svg" alt="Lowcaly – Zero Sugar Hero Taste" width="228" height="98" loading="lazy">
+      <div class="footer__grid">
+        <form class="newsletter" onsubmit="event.preventDefault(); this.classList.add('is-sent');">
+          <label for="email">Prenumerera på vårt nyhetsbrev här</label>
+          <div class="newsletter__field">
+            <input id="email" type="email" placeholder="NAMN@EMAIL.COM" required>
+            <button aria-label="Skicka"><img src="assets/svg/send.svg" alt="" width="22" height="18"></button>
+          </div>
+          <small>Genom din anmälan godkänner du <a href="https://www.lowcaly.com/sv/cookiepolicy/">NJIE's integritetspolicy</a>.</small>
+          <span class="newsletter__ok">Tack! Du är nu anmäld.</span>
+        </form>
+        <nav class="footer__nav" aria-label="Sidfot">
+          <a href="https://www.lowcaly.com/sv/recept/">Recept</a>
+          <a href="https://www.lowcaly.com/sv/artiklar/">Artiklar</a>
+          <a href="#om">Om Lowcaly</a>
+          <a href="#produkter">Produkter</a>
+          <a href="https://www.lowcaly.com/sv/cookiepolicy/">Cookiepolicy</a>
+        </nav>
+        <div class="footer__social">
+          <a href="https://www.instagram.com/lowcalyglobal" aria-label="Instagram"><img src="assets/svg/instagram.svg" alt="" width="33" height="34"></a>
+          <a href="https://www.facebook.com/lowcalysverige" aria-label="Facebook"><img src="assets/svg/facebook.svg" alt="" width="19" height="34"></a>
+          <a href="https://www.linkedin.com/company/njiefoods" aria-label="LinkedIn"><img src="assets/svg/linkedin.svg" alt="" width="34" height="34"></a>
+        </div>
+      </div>
+      <p class="footer__copy">© 2026 LOWCALY. ALL RIGHTS RESERVED.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
