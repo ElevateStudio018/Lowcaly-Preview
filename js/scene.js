@@ -225,7 +225,6 @@ export async function createStory({ canvas, flavors, onProgress, reducedMotion }
     progressSmooth = NO_SMOOTH ? progress : lerp(progressSmooth, progress, 1 - Math.pow(0.0008, dt));
     if (Math.abs(progressSmooth - progress) < 0.0005) progressSmooth = progress;
     const f = progressSmooth;
-    onProgress?.(f);
 
     pointerSmooth.lerp(pointer, 1 - Math.pow(0.02, dt));
     camera.position.x = pointerSmooth.x * 0.18;
@@ -324,6 +323,8 @@ export async function createStory({ canvas, flavors, onProgress, reducedMotion }
       fr.pivot.visible = fr.scale > 0.003;
     }
 
+    // after the packs are placed, so overlay elements can follow their screen position
+    onProgress?.(f);
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
