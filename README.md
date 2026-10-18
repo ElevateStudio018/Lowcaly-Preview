@@ -28,6 +28,17 @@ python3 -m http.server 8000
 | `js/scene.js` | Three.js-scen, scrollanimation, hover/drag-fysik |
 | `js/main.js` | Overlay-texter, färgövergångar, meny, filter, reveal-animationer |
 
+## Hero-video
+
+`assets/video/` innehåller Lowcalys egen hero-film (hämtad från deras Cloudflare Stream, max 720p desktop / 1080p mobil),
+uppskalad till 4K med Topaz via Higgsfield och omkodad till H.264 för webben:
+
+- `hero-4k.mp4` – 3840×2160, visas på stora/retina-skärmar
+- `hero-1080.mp4` – 1920×1080, övriga datorer
+- `hero-mobile.mp4` – 1440×2560 stående, mobil
+
+Postern (`assets/img/hero.webp`) är första bildrutan, så videon tonar in utan hopp.
+
 ## Typsnitt
 
 Originalsajten använder de licensierade typsnitten **Heron Sans Cond** och **Kepler Std**. De ligger inte i

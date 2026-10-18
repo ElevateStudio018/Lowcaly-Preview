@@ -262,7 +262,9 @@ if (heroVideo && !reducedMotion && !navigator.connection?.saveData) {
   const mobile = matchMedia('(max-width: 760px)').matches;
   heroVideo.poster = mobile ? 'assets/img/hero-mobile.webp' : 'assets/img/hero.webp';
   if (mobile) $('.hero__media img').src = 'assets/img/hero-mobile.webp';
-  heroVideo.src = mobile ? heroVideo.dataset.mobile : heroVideo.dataset.desktop;
+  // 4K only where the screen can actually show it (large or high-DPI displays)
+  const physicalWidth = innerWidth * Math.min(devicePixelRatio, 2);
+  heroVideo.src = mobile ? heroVideo.dataset.mobile : physicalWidth >= 2400 ? heroVideo.dataset['4k'] : heroVideo.dataset.hd;
   heroVideo.preload = 'auto';
   heroVideo.addEventListener('playing', () => heroVideo.classList.add('is-playing'), { once: true });
   heroVideo.play().catch(() => {});
