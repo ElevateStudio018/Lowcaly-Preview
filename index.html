@@ -70,23 +70,27 @@
   </header>
 
   <main id="top">
-    <!-- Hero -->
+    <!-- Hero: the film plays clean, the title arrives as an end card -->
     <section class="hero" id="hero">
-      <div class="hero__frame">
-        <div class="hero__media">
-          <!-- poster frame shows instantly; main.js swaps in the 4K (or mobile) loop -->
-          <img src="assets/img/hero.webp" alt="Lowcaly Cherry och Mixed Berry med iskalla glas på ett träbord" fetchpriority="high">
-          <video class="hero__video" id="heroVideo" muted loop playsinline preload="none" aria-hidden="true"
-            data-4k="assets/video/hero-4k.mp4" data-hd="assets/video/hero-1080.mp4" data-mobile="assets/video/hero-mobile.mp4"></video>
-        </div>
+      <div class="hero__media">
+        <!-- poster frame shows instantly; main.js swaps in the 4K (or mobile) loop -->
+        <img src="assets/img/hero.webp" alt="Lowcaly Cherry och Mixed Berry med iskalla glas på ett träbord" fetchpriority="high">
+        <video class="hero__video" id="heroVideo" muted playsinline preload="none" aria-hidden="true"
+          data-4k="assets/video/hero-4k.mp4" data-hd="assets/video/hero-1080.mp4" data-mobile="assets/video/hero-mobile.mp4"></video>
       </div>
-      <div class="hero__bar">
-        <h1 class="hero__title"><span class="hero__line"><span>Zero Sugar – Hero Taste</span></span></h1>
-        <div class="hero__aside">
+      <div class="hero__veil" aria-hidden="true"></div>
+      <div class="hero__card">
+        <h1 class="hero__title" aria-label="Zero Sugar – Hero Taste">
+          <span class="hero__row" data-split>Zero Sugar</span>
+          <span class="hero__row" data-split>Hero Taste</span>
+        </h1>
+        <div class="hero__sub">
+          <span class="hero__rule" aria-hidden="true"></span>
           <p>Fräscha, vitaminberikade frukt- och frukostdrycker. Alltid sockerfria.</p>
           <a class="hero__link" href="#story">Upptäck smakerna<svg width="35" height="12" viewBox="0 0 35 14"><line x1="0" y1="8" x2="35" y2="8" stroke="currentColor"/><polyline points="30,4 35,8 30,12" fill="none" stroke="currentColor"/></svg></a>
         </div>
       </div>
+      <div class="hero__timeline" aria-hidden="true"><span id="heroTime"></span></div>
     </section>
 
     <!-- 3D scroll story -->
