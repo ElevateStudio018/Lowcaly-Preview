@@ -63,9 +63,9 @@ const mix = (a, b, t) => {
   const A = hex(a), B = hex(b);
   return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`;
 };
-const BG = ['#fff3e3', ...FLAVORS.map((f) => f.bg)];
+const BG = ['#004a3b', ...FLAVORS.map((f) => f.bg)];
 const BLOB = ['#fff3e3', ...FLAVORS.map((f) => f.color)];
-const INK = ['#005745', ...FLAVORS.map((f) => f.text)];
+const INK = ['#fff3e3', ...FLAVORS.map((f) => f.text)];
 const at = (arr, f) => {
   const i = clamp(Math.floor(f), 0, arr.length - 1), j = clamp(i + 1, 0, arr.length - 1);
   const t = f - Math.floor(f);
@@ -102,8 +102,10 @@ let story = null;
 let tipShown = false;
 const sp = {};
 
+const heroBg = $('#heroBg');
 function updateOverlay(f) {
   storyBg.style.background = at(BG, f);
+  heroBg.style.opacity = 1 - clamp(f / 0.85, 0, 1);
   const ink = at(INK, f);
   stage.style.setProperty('--dot', ink);
   stage.style.color = ink;
@@ -127,8 +129,8 @@ function updateOverlay(f) {
     const o = clamp(1 - Math.abs(d) * 1.6, 0, 1);
     el.style.opacity = o;
     const y = d * -38;
-    el.style.transform = el.classList.contains('hero-title')
-      ? `translateY(${y}vh)`
+    el.style.transform = el.classList.contains('hero-type')
+      ? `translateY(calc(${isMobile ? 0 : -58}% + ${y * 0.8}vh)) scale(${1 + Math.max(0, d) * 0.12})`
       : `translateY(calc(-50% + ${y}vh)) scale(${1 + Math.abs(d) * 0.15})`;
     el.style.visibility = o > 0.001 ? 'visible' : 'hidden';
   });
@@ -176,10 +178,59 @@ function scheduleSnap() {
   }, 160);
 }
 
-stepEls.dots.forEach((b) => b.addEventListener('click', () => {
-  const top = storySection.offsetTop + +b.dataset.step * innerHeight;
-  if (lenis) lenis.scrollTo(top, { duration: 1.4 }); else scrollTo({ top, behavior: 'smooth' });
-}));
+function gotoStep(step) {
+  const top = storySection.offsetTop + step * innerHeight;
+  if (lenis) lenis.scrollTo(top, { duration: 1.6 }); else scrollTo({ top, behavior: 'smooth' });
+}
+stepEls.dots.forEach((b) => b.addEventListener('click', () => gotoStep(+b.dataset.step)));
+$$('[data-goto]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); gotoStep(+a.dataset.goto); }));
+
+// ---------------------------------------------------------------- hero: name of the pack facing us
+const heroIdx = $('#heroIdx'), heroName = $('#heroName');
+let heroFront = 0, swapTimer;
+function onHeroFront(j) {
+  if (j === heroFront) return;
+  heroFront = j;
+  heroName.classList.add('is-swap');
+  clearTimeout(swapTimer);
+  swapTimer = setTimeout(() => {
+    heroName.textContent = FLAVORS[j].name;
+    heroIdx.textContent = String(j + 1).padStart(2, '0');
+    heroName.classList.remove('is-swap');
+  }, 220);
+}
+
+// ---------------------------------------------------------------- custom cursor + magnetic buttons
+const cursor = $('#cursor'), cursorLabel = $('#cursorLabel');
+if (matchMedia('(hover: hover) and (pointer: fine)').matches && !reducedMotion) {
+  document.body.classList.add('has-cursor');
+  const dot = cursor.firstElementChild, ring = cursor.lastElementChild;
+  let mx = -100, my = -100, rx = -100, ry = -100;
+  addEventListener('pointermove', (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
+  const loop = () => {
+    rx += (mx - rx) * 0.18; ry += (my - ry) * 0.18;
+    dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%,-50%)`;
+    ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%,-50%)`;
+    const el = document.elementFromPoint(mx, my);
+    const onDark = el?.closest('.footer, .split__body, .marquee, .ig__text, .loader') || (el?.closest('.story') && storyProgress() < 0.5);
+    const b = document.body.classList;
+    const label = b.contains('is-grabbing') ? 'Släpp' : b.contains('is-grabbable') ? 'Dra' : b.contains('is-spinnable') ? 'Snurra' : '';
+    cursor.classList.toggle('is-label', !!label);
+    cursor.classList.toggle('is-link', !label && !!el?.closest('a, button'));
+    if (label) cursorLabel.textContent = label;
+    cursor.style.setProperty('--cursor', onDark ? '#fff3e3' : (el?.closest('.story') ? stage.style.getPropertyValue('--dot') || '#005745' : '#005745'));
+    cursor.style.setProperty('--cursor-ink', onDark ? '#005745' : '#fff3e3');
+    requestAnimationFrame(loop);
+  };
+  loop();
+  $$('.btn, .chip').forEach((btn) => {
+    btn.addEventListener('pointermove', (e) => {
+      const r = btn.getBoundingClientRect();
+      btn.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * 0.25}px, ${(e.clientY - r.top - r.height / 2) * 0.35}px)`;
+    });
+    btn.addEventListener('pointerleave', () => { btn.style.transform = ''; });
+  });
+}
 
 // ---------------------------------------------------------------- product shelf
 const shelf = $('#shelf');
@@ -219,7 +270,17 @@ const io = new IntersectionObserver((entries) => {
 $$('.reveal, .split').forEach((el) => io.observe(el));
 
 // ---------------------------------------------------------------- boot
-const loader = $('#loader'), bar = $('#loaderBar');
+const loader = $('#loader'), barEl = $('#loaderBar'), pct = $('#loaderPct');
+// the bar and the counter animate towards whatever stage loading has reached
+let loadTarget = 0, loadShown = 0;
+const bar = { style: { set width(v) { loadTarget = parseFloat(v); } } };
+(function tick() {
+  loadShown += (loadTarget - loadShown) * 0.12;
+  barEl.style.width = loadShown + '%';
+  pct.textContent = String(Math.round(loadShown)).padStart(3, '0');
+  if (loadShown < 99.5) requestAnimationFrame(tick);
+  else { barEl.style.width = '100%'; pct.textContent = '100'; }
+})();
 bar.style.width = '20%';
 
 async function boot() {
@@ -251,6 +312,7 @@ async function boot() {
       canvas: $('#storyCanvas'),
       flavors: FLAVORS,
       reducedMotion,
+      onHeroFront,
       onProgress: updateOverlay
     });
     new IntersectionObserver(([e]) => story.setRunning(e.isIntersecting)).observe(storySection);
@@ -262,6 +324,9 @@ async function boot() {
   }
   bar.style.width = '100%';
   onScroll();
-  setTimeout(() => loader.classList.add('is-done'), 250);
+  setTimeout(() => {
+    loader.classList.add('is-done');
+    document.body.classList.add('is-ready');
+  }, 600);
 }
 boot();

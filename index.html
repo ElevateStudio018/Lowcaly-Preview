@@ -25,7 +25,11 @@
   <div class="loader" id="loader" aria-hidden="true">
     <img src="assets/svg/logo.svg" alt="" width="159" height="49">
     <div class="loader__bar"><span id="loaderBar"></span></div>
+    <span class="loader__pct" id="loaderPct">000</span>
   </div>
+
+  <div class="cursor" id="cursor" aria-hidden="true"><span class="cursor__dot"></span><span class="cursor__ring"><em id="cursorLabel"></em></span></div>
+  <div class="grain" aria-hidden="true"></div>
 
   <div class="topbar">ZERO SUGAR HERO TASTE</div>
 
@@ -70,19 +74,44 @@
     <section class="story" id="story" aria-label="Våra smaker">
       <div class="story__stage">
         <div class="story__bg" id="storyBg"></div>
+        <div class="hero-bg" id="heroBg" aria-hidden="true"></div>
         <div class="story__blob" id="storyBlob" aria-hidden="true">
           <svg viewBox="0 0 400 400"><path id="blobPath" d=""/></svg>
         </div>
         <div class="story__titles" aria-hidden="true">
-          <h1 class="hero-title" data-step="0"><span>ZERO SUGAR</span><span>– HERO TASTE</span></h1>
+          <h1 class="hero-type" data-step="0">
+            <span class="hero-type__line"><span class="hero-type__in">Zero Sugar</span></span>
+            <span class="hero-type__line hero-type__line--outline"><span class="hero-type__in">Hero Taste</span></span>
+          </h1>
           <!-- flavor titles injected -->
         </div>
         <canvas class="story__canvas" id="storyCanvas"></canvas>
         <div class="story__panels" id="storyPanels">
           <div class="panel panel--hero" data-step="0">
-            <p class="panel__lead">Goda vanor ska vara enkla. Fräscha, sockerfria frukost- och fruktdrycker som funkar lika bra till morgonrutinen som när du vill höja lunchen, mellanmålet eller middagen.</p>
-            <a class="btn" href="#produkter">Se alla våra produkter</a>
-            <div class="scroll-hint"><span></span>Scrolla &amp; upptäck smakerna</div>
+            <div class="hero-top">
+              <p class="eyebrow"><span class="eyebrow__line"></span>Lowcaly® · Sockerfria frukt- &amp; frukostdrycker</p>
+              <a class="chip" href="https://www.lowcaly.com/sv/nyheter/cherry-mixed-berry-ar-har/"><span class="chip__dot"></span>Nyhet: Cherry &amp; Mixed Berry<svg width="22" height="10" viewBox="0 0 35 14"><line x1="0" y1="8" x2="35" y2="8" stroke="currentColor" stroke-width="1.5"/><polyline points="29,3 35,8 29,13" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></a>
+            </div>
+            <div class="hero-bottom">
+              <div class="hero-intro">
+                <p>Goda vanor ska vara enkla. Fräscha, sockerfria drycker som visar att hälsosmart kan vara fullt av smak – utan kompromisser.</p>
+                <div class="hero-ctas">
+                  <a class="btn btn--cream magnetic" href="#" data-goto="1">Upptäck smakerna</a>
+                  <a class="btn btn--ghost magnetic" href="#produkter">Alla produkter</a>
+                </div>
+              </div>
+              <div class="hero-now" aria-live="polite">
+                <span class="hero-now__count"><b id="heroIdx">01</b> / 06</span>
+                <span class="hero-now__name" id="heroName">Cherry</span>
+                <span class="hero-now__hint">← Dra för att snurra →</span>
+              </div>
+              <ul class="hero-stats">
+                <li><b>0 g</b><span>Socker</span></li>
+                <li><b>9</b><span>Smaker</span></li>
+                <li><b>6–8</b><span>Vitaminer</span></li>
+              </ul>
+            </div>
+            <div class="scroll-cue" aria-hidden="true"><span></span></div>
           </div>
           <!-- flavor panels injected -->
         </div>
@@ -91,10 +120,19 @@
       </div>
     </section>
 
+    <!-- Marquee -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee__track">
+        <span>Zero Sugar</span><i>✦</i><em>hero taste</em><i>✦</i><span>Sockerfritt</span><i>✦</i><em>vitaminberikat</em><i>✦</i><span>9 smaker</span><i>✦</i><em>alltid gott</em><i>✦</i>
+        <span>Zero Sugar</span><i>✦</i><em>hero taste</em><i>✦</i><span>Sockerfritt</span><i>✦</i><em>vitaminberikat</em><i>✦</i><span>9 smaker</span><i>✦</i><em>alltid gott</em><i>✦</i>
+      </div>
+    </div>
+
     <!-- Product range -->
     <section class="products" id="produkter">
       <div class="container">
-        <h2 class="h-xl reveal">ZERO SUGAR – HERO TASTE</h2>
+        <p class="kicker reveal">Sortimentet</p>
+        <h2 class="h-xl reveal">Produkter</h2>
         <p class="lead reveal">Lowcaly gör det enkelt att välja sockerfritt. Sortimentet består av smakrika, vitaminberikade fruktdrycker och frukostdrycker – alla sockerfria.</p>
         <div class="pills reveal" role="tablist">
           <button class="pill is-active" role="tab" data-tab="alla">Alla</button>

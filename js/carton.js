@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-export const CARTON = { w: 1, h: 2.54, d: 0.86 };
+export const CARTON = { w: 1, h: 2.54, d: 0.86, slope: 0.09 };
 
 const HEAD = '"HeronSansCond","Heron Sans Cond","Barlow Condensed",sans-serif';
 const BODY = '"KeplerStd","Kepler Std","Crimson Pro",serif';
@@ -223,6 +223,22 @@ function loadImage(src) {
   }));
 }
 
+// Tetra Brik "Edge" body: a rounded box whose top is sheared so the front
+// edge sits lower than the back one.
+function edgeBody() {
+  const geo = new RoundedBoxGeometry(CARTON.w, CARTON.h, CARTON.d, 6, 0.035);
+  const p = geo.attributes.position, half = CARTON.h / 2;
+  for (let i = 0; i < p.count; i++) {
+    const y = p.getY(i);
+    if (y > half - 0.06) {
+      const k = (y - (half - 0.06)) / 0.06;
+      p.setY(i, y - CARTON.slope * (p.getZ(i) / (CARTON.d / 2)) * k);
+    }
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
 let bodyGeo;
 export async function buildCarton(f, renderer) {
   const base = `assets/tex/${f.id}`;
@@ -244,16 +260,29 @@ export async function buildCarton(f, renderer) {
   // BoxGeometry group order: +x, -x, +y, -y, +z, -z
   const mats = [mk(right), mk(left), mk(top), bottom, mk(front), mk(back)];
 
-  bodyGeo ||= new RoundedBoxGeometry(CARTON.w, CARTON.h, CARTON.d, 6, 0.035);
+  bodyGeo ||= edgeBody();
   const body = new THREE.Mesh(bodyGeo, mats);
   body.castShadow = true;
   body.receiveShadow = true;
 
   const group = new THREE.Group();
   group.add(body);
+  // the cap sits on the slanted "Edge" top, tilted towards the front
+  const capZ = 0.06;
   const c = cap();
-  c.position.set(0, CARTON.h / 2, 0.06);
+  c.position.set(0, CARTON.h / 2 - CARTON.slope * (capZ / (CARTON.d / 2)) - 0.004, capZ);
+  c.rotation.x = Math.atan2(CARTON.slope * 2, CARTON.d);
   group.add(c);
+
+  // transverse sealing fin along the back of the top, folded flat like the real pack
+  const fin = new THREE.Mesh(
+    new RoundedBoxGeometry(CARTON.w * 0.97, 0.05, 0.016, 2, 0.006),
+    new THREE.MeshPhysicalMaterial({ ...common, color: f.color })
+  );
+  fin.position.set(0, CARTON.h / 2 + CARTON.slope + 0.012, -CARTON.d / 2 + 0.02);
+  fin.rotation.x = -0.35;
+  fin.castShadow = true;
+  group.add(fin);
   group.userData.materials = mats;
   return group;
 }

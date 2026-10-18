@@ -36,14 +36,19 @@
     scene.add(key, new THREE.DirectionalLight('#ffffff', 1.6).translateZ(-6).translateY(3));
     const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
     camera.position.set(0, 0.4, 7);
-    new OrbitControls(camera, canvas);
+    const controls = new OrbitControls(camera, canvas);
 
-    const names = Object.keys(FRUIT_FACTORY);
+    // ?only=strawberry,raspberry shows a close-up of just those fruits
+    const only = new URLSearchParams(location.search).get('only');
+    const names = only ? only.split(',') : Object.keys(FRUIT_FACTORY);
+    const zoom = only ? 5.5 / names.length : 1.4;
+    if (only) { camera.position.set(0, 0.9, 3.4); controls.update(); }
     names.forEach((n, i) => {
       const o = FRUIT_FACTORY[n]();
-      o.position.set((i % 5 - 2) * 1.1, 1 - Math.floor(i / 5) * 1.1, 0);
-      o.scale.multiplyScalar(1.4);
-      o.rotation.y = 0.5;
+      if (only) o.position.set((i - (names.length - 1) / 2) * 1.35, 0, 0);
+      else o.position.set((i % 5 - 2) * 1.1, 1 - Math.floor(i / 5) * 1.1, 0);
+      o.scale.multiplyScalar(zoom);
+      o.rotation.set(only ? 0.35 : 0, 0.5, 0);
       scene.add(o);
     });
     function resize() {

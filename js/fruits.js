@@ -242,150 +242,247 @@ export function cherry() {
   return shadowed(g);
 }
 
-export function strawberry({ half = false } = {}) {
-  const prof = [];
-  for (let i = 0; i <= 40; i++) {
-    const t = i / 40; // 0 bottom tip -> 1 top
-    const r = Math.pow(Math.sin(Math.PI * 0.5 * Math.min(1, t * 1.25)), 0.9) * (1 - Math.pow(t, 6) * 0.95) * 0.78;
-    prof.push(new THREE.Vector2(Math.max(0.0001, r), -1 + t * 1.75));
-  }
-  let geo = new THREE.LatheGeometry(prof, 72, 0, half ? Math.PI : Math.PI * 2);
-  deform(geo, (v) => {
-    const lump = (fbm(v.x * 4, v.y * 4, v.z * 4) - 0.5) * 0.06;
-    const k = 1 + lump;
-    v.x *= k; v.z *= k;
-  });
-  paint(geo, (v, c) => {
-    const top = smooth(Math.max(0, Math.min(1, (v.y - 0.35) / 0.4)));
-    c.copy(C('#c3101f')).lerp(C('#e32d2b'), fbm(v.x * 3, v.y * 3, v.z * 3) * 0.5);
-    c.lerp(C('#f2c9a0'), top * 0.55);
-  });
-  const mat = new THREE.MeshPhysicalMaterial({
-    vertexColors: true, roughness: 0.25, clearcoat: 0.9, clearcoatRoughness: 0.12,
-    bumpMap: grain(), bumpScale: 1.2, side: THREE.DoubleSide
-  });
-  const body = new THREE.Mesh(geo, mat);
-  const g = new THREE.Group();
-  g.add(body);
+// Strawberry profile radius at height parameter t (0 = tip, 1 = shoulder).
+function strawR(t) {
+  return Math.pow(Math.sin(Math.PI * 0.5 * Math.min(1, t * 1.22)), 0.85) * (1 - Math.pow(t, 7) * 0.92) * 0.8;
+}
 
-  // seeds (achenes) sitting in small pits
-  const seedGeo = new THREE.SphereGeometry(0.022, 8, 6).scale(0.7, 1.3, 0.7);
-  const seedMat = new THREE.MeshPhysicalMaterial({ color: '#e7c35a', roughness: 0.35, clearcoat: 0.5 });
-  const count = half ? 70 : 140;
-  const seeds = new THREE.InstancedMesh(seedGeo, seedMat, count);
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
+export function strawberry({ half = false } = {}) {
+  const ROWS = 18, COLS = 20, PTS = 96, SEG = 144;
+  const prof = [];
+  for (let i = 0; i <= PTS; i++) {
+    const t = i / PTS;
+    prof.push(new THREE.Vector2(Math.max(0.0001, strawR(t)), -1 + t * 1.75));
+  }
+  const phiLen = half ? Math.PI : Math.PI * 2;
+  const geo = new THREE.LatheGeometry(prof, SEG, 0, phiLen);
+  // Seeds sit on a staggered lattice; the flesh around each one is pressed
+  // into a small pit, which is what makes a strawberry read as real.
+  const uv = geo.attributes.uv, pos = geo.attributes.position, pit = new Float32Array(pos.count);
+  const v3 = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    const u = uv.getX(i) * (half ? 0.5 : 1), t = uv.getY(i);
+    v3.fromBufferAttribute(pos, i);
+    const row = t * ROWS, ri = Math.round(row);
+    const col = u * COLS + (ri % 2) * 0.5, ci = Math.round(col);
+    const du = (col - ci) * 1.0, dv = (row - ri) * 1.0;
+    const d2 = du * du + dv * dv;
+    const inBand = t > 0.06 && t < 0.88 ? 1 : 0;
+    const dent = Math.exp(-d2 / 0.028) * 0.017 * inBand;
+    pit[i] = dent / 0.017;
+    const r = Math.hypot(v3.x, v3.z);
+    const k = r > 0.001 ? (r - dent) / r : 1;
+    pos.setXYZ(i, v3.x * k, v3.y, v3.z * k);
+  }
+  geo.computeVertexNormals();
+  paint(geo, (v, c) => {
+    const t = (v.y + 1) / 1.75;
+    const n = fbm(v.x * 4, v.y * 4, v.z * 4);
+    c.copy(C('#b30d1c')).lerp(C('#e0262b'), n * 0.7);
+    c.lerp(C('#f5d6a8'), smooth(Math.max(0, Math.min(1, (t - 0.8) / 0.18))) * 0.6);
+  });
+  // darken the pits slightly
+  const col = geo.attributes.color;
+  for (let i = 0; i < col.count; i++) {
+    const k = 1 - pit[i] * 0.28;
+    col.setXYZ(i, col.getX(i) * k, col.getY(i) * k * 0.9, col.getZ(i) * k * 0.9);
+  }
+  const mat = new THREE.MeshPhysicalMaterial({
+    vertexColors: true, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.08,
+    sheen: 0.25, sheenColor: C('#ff9a8a'), emissive: C('#3a0006'), emissiveIntensity: 0.25,
+    bumpMap: grain(), bumpScale: 0.5, side: THREE.DoubleSide
+  });
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(geo, mat));
+
+  // achenes, slightly tilted towards the tip like on a real berry
+  const seedGeo = new THREE.SphereGeometry(0.017, 10, 8).scale(0.7, 1.45, 0.55);
+  const seedMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.3, clearcoat: 0.7 });
+  const seeds = new THREE.InstancedMesh(seedGeo, seedMat, ROWS * COLS);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), qt = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), cc = new THREE.Color();
   let k = 0;
-  for (let row = 0; row < 14 && k < count; row++) {
-    const t = 0.08 + row / 14 * 0.78;
-    const y = -1 + t * 1.75;
-    const r = Math.pow(Math.sin(Math.PI * 0.5 * Math.min(1, t * 1.25)), 0.9) * (1 - Math.pow(t, 6) * 0.95) * 0.78;
-    const per = Math.max(4, Math.round(r * 14));
-    for (let j = 0; j < per && k < count; j++) {
-      const a = (j + (row % 2) * 0.5) / per * (half ? Math.PI : Math.PI * 2);
-      const n = new THREE.Vector3(Math.sin(a), 0.35, Math.cos(a)).normalize();
+  for (let ri = 1; ri < ROWS; ri++) {
+    const t = ri / ROWS;
+    if (t < 0.06 || t > 0.88) continue;
+    for (let ci = 0; ci < COLS; ci++) {
+      const u = (ci - (ri % 2) * 0.5) / COLS;
+      if (half && (u < 0 || u > 0.5)) continue;
+      const a = u * Math.PI * 2;
+      const r = strawR(t) - 0.013;
+      const y = -1 + t * 1.75;
+      const n = new THREE.Vector3(Math.sin(a), 0.25, Math.cos(a)).normalize();
       q.setFromUnitVectors(up, n);
-      m4.compose(new THREE.Vector3(Math.sin(a) * r * 0.985, y, Math.cos(a) * r * 0.985), q, new THREE.Vector3(1, 1, 1));
-      seeds.setMatrixAt(k++, m4);
+      qt.setFromAxisAngle(new THREE.Vector3(Math.cos(a), 0, -Math.sin(a)), -0.5);
+      q.premultiply(qt);
+      m4.compose(new THREE.Vector3(Math.sin(a) * r, y, Math.cos(a) * r), q, new THREE.Vector3(1, 1, 1));
+      seeds.setMatrixAt(k, m4);
+      seeds.setColorAt(k, cc.set('#e2b84a').lerp(C('#c9832c'), Math.random() * 0.6).lerp(C('#f4dc7a'), t > 0.7 ? 0.4 : 0));
+      k++;
     }
   }
   seeds.count = k;
   g.add(seeds);
 
   if (half) {
-    // flesh cross-section
     const shape = new THREE.Shape();
     shape.moveTo(0, prof[0].y);
     prof.forEach((p) => shape.lineTo(p.x, p.y));
     for (let i = prof.length - 1; i >= 0; i--) shape.lineTo(-prof[i].x, prof[i].y);
-    const fg = new THREE.ShapeGeometry(shape, 24);
-    paint(fg, (v, c) => {
-      const r = Math.sqrt(v.x * v.x + Math.pow((v.y + 0.1) * 0.6, 2));
-      c.copy(C('#fbe6dc')).lerp(C('#e8324a'), smooth(Math.min(1, r / 0.7)));
+    const fg = new THREE.ShapeGeometry(shape, 48);
+    // subdivide the flat face so the vertex-colour gradient has resolution
+    const face = new THREE.PlaneGeometry(1.7, 1.8, 90, 96).translate(0, -0.1, 0);
+    const fp = face.attributes.position;
+    for (let i = 0; i < fp.count; i++) {
+      const x = fp.getX(i), y = fp.getY(i), t = (y + 1) / 1.75;
+      const R = t >= 0 && t <= 1 ? strawR(t) : 0;
+      fp.setX(i, Math.max(-R, Math.min(R, x)));
+    }
+    paint(face, (v, c) => {
+      const t = (v.y + 1) / 1.75, R = Math.max(0.0001, strawR(Math.min(1, Math.max(0, t))));
+      const rr = Math.abs(v.x) / R;
+      const core = Math.exp(-Math.pow(v.x / 0.12, 2)) * smooth(Math.min(1, t * 1.4));
+      c.copy(C('#d0142c')).lerp(C('#f26a6e'), smooth(Math.max(0, 0.9 - rr)) * 0.8);
+      c.lerp(C('#ffe4dc'), core * 0.85);
+      // radial vascular streaks
+      c.lerp(C('#f2a0a0'), Math.max(0, Math.sin(Math.atan2(v.y + 0.2, v.x) * 22) * 0.5) * 0.25 * rr);
     });
-    const flesh = new THREE.Mesh(fg, new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.15, side: THREE.DoubleSide }));
+    fg.dispose();
+    const flesh = new THREE.Mesh(face, new THREE.MeshPhysicalMaterial({
+      vertexColors: true, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.05,
+      bumpMap: grain(), bumpScale: 1.2, side: THREE.DoubleSide
+    }));
     flesh.rotation.y = Math.PI / 2;
     g.add(flesh);
   }
 
-  // calyx
+  // calyx: pointy, slightly curled sepals with a hairy stem
   const calyx = new THREE.Group();
-  for (let i = 0; i < 9; i++) {
-    const l = leafMesh('smooth', '#3f7a22', 0.3, 0.45);
+  for (let i = 0; i < 10; i++) {
+    const l = leafMesh('smooth', i % 2 ? '#3f7a22' : '#4d8a2a', rand(0.26, 0.34), 0.34);
     l.rotation.order = 'YXZ';
-    l.rotation.y = (i / 9) * Math.PI * 2;
-    l.rotation.x = 1.25 + rand(-0.15, 0.2);
+    l.rotation.y = (i / 10) * Math.PI * 2 + rand(-0.1, 0.1);
+    l.rotation.x = 1.3 + rand(-0.2, 0.25);
     calyx.add(l);
   }
-  calyx.position.y = 0.74;
+  calyx.position.y = 0.73;
   g.add(calyx);
-  g.add(stemMesh([[0, 0.72, 0], [0.02, 0.86, 0.01], [0.05, 0.98, 0]], 0.02, '#4d7a24'));
+  g.add(stemMesh([[0, 0.7, 0], [0.02, 0.86, 0.01], [0.06, 1.0, 0]], 0.022, '#4d7a24'));
   g.scale.setScalar(0.3);
   return shadowed(g);
 }
 
 export function raspberry() {
   const g = new THREE.Group();
-  const core = new THREE.Mesh(new THREE.SphereGeometry(0.6, 24, 18).scale(1, 1.15, 1), new THREE.MeshStandardMaterial({ color: '#4a0514', roughness: 0.6 }));
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.6, 24, 18).scale(1, 1.15, 1), new THREE.MeshStandardMaterial({ color: '#3d0410', roughness: 0.6 }));
   g.add(core);
-  const dGeo = deform(new THREE.SphereGeometry(0.2, 20, 14), (v) => { v.multiplyScalar(1 + (fbm(v.x * 20, v.y * 20, v.z * 20) - 0.5) * 0.06); });
+  // each drupelet is a little juice bead: slightly tear-shaped, glossy, with a
+  // reddish emissive term faking light scattering through the flesh
+  const dGeo = deform(new THREE.SphereGeometry(0.2, 24, 18), (v) => {
+    v.z *= 0.9 + (v.y < 0 ? 0 : 0);
+    v.multiplyScalar(1 + (fbm(v.x * 20, v.y * 20, v.z * 20) - 0.5) * 0.05);
+  });
   const dMat = new THREE.MeshPhysicalMaterial({
-    color: '#ffffff', roughness: 0.28, clearcoat: 0.8, clearcoatRoughness: 0.2,
-    sheen: 0.8, sheenColor: C('#ff8aa8'), sheenRoughness: 0.5
+    color: '#ffffff', roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.12,
+    sheen: 1, sheenColor: C('#ff6f92'), sheenRoughness: 0.35,
+    emissive: C('#6d0420'), emissiveIntensity: 0.35, specularIntensity: 1
   });
   const N = 200;
   const inst = new THREE.InstancedMesh(dGeo, dMat, N);
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), col = new THREE.Color();
+  const styles = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.004, 0.0025, 0.09, 4), new THREE.MeshStandardMaterial({ color: '#e9c9b0', roughness: 0.9 }), N);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), col = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
   let k = 0;
   for (let i = 0; i < 210 && k < N; i++) {
     const y = 1 - (i / 209) * 2, r = Math.sqrt(1 - y * y), th = i * 2.39996;
     if (y > 0.86) continue; // hollow stem end
-    // slightly conical: narrower towards the tip
     const taper = 0.78 - (1 - y) * 0.06;
+    const n = new THREE.Vector3(Math.cos(th) * r, y, Math.sin(th) * r).normalize();
     const p = new THREE.Vector3(Math.cos(th) * r * taper, y * 0.98, Math.sin(th) * r * taper);
-    q.setFromEuler(new THREE.Euler(rand(0, 6), rand(0, 6), 0));
-    const s = rand(0.85, 1.12);
+    q.setFromUnitVectors(up, n);
+    const s = rand(0.86, 1.12);
     m4.compose(p, q, new THREE.Vector3(s, s, s));
     inst.setMatrixAt(k, m4);
-    inst.setColorAt(k, col.set('#a8123a').lerp(C('#d4285a'), Math.random() * 0.45).lerp(C('#6d0620'), Math.random() * 0.25));
+    inst.setColorAt(k, col.set('#9e0f36').lerp(C('#d42a5c'), Math.random() * 0.5).lerp(C('#5e0418'), Math.random() * 0.3));
+    // the dried style ("hair") sticking out of each bead
+    if (Math.random() < 0.55) {
+      m4.compose(p.clone().addScaledVector(n, 0.2 * s), q, new THREE.Vector3(1, rand(0.6, 1.3), 1));
+      styles.setMatrixAt(k, m4);
+    } else {
+      m4.makeScale(0, 0, 0);
+      styles.setMatrixAt(k, m4);
+    }
     k++;
   }
   inst.count = k;
-  g.add(inst);
-  // tiny hairs
-  const hairGeo = new THREE.CylinderGeometry(0.004, 0.002, 0.12, 3);
-  const hairs = new THREE.InstancedMesh(hairGeo, new THREE.MeshStandardMaterial({ color: '#f5d0d8', roughness: 0.8, transparent: true, opacity: 0.6 }), 60);
-  for (let i = 0; i < 60; i++) {
-    const v = new THREE.Vector3(rand(-1, 1), rand(-1, 0.7), rand(-1, 1)).normalize();
-    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v);
-    m4.compose(v.clone().multiply(new THREE.Vector3(0.88, 0.95, 0.88)), q, new THREE.Vector3(1, 1, 1));
-    hairs.setMatrixAt(i, m4);
-  }
-  g.add(hairs);
+  styles.count = k;
+  g.add(inst, styles);
   g.scale.setScalar(0.2);
   return shadowed(g);
 }
 
+// Patchy, dusty wax bloom drawn once and shared by all blueberries.
+function bloomTexture() {
+  const s = 512, cv = document.createElement('canvas');
+  cv.width = cv.height = s;
+  const g = cv.getContext('2d'), img = g.createImageData(s, s);
+  const dark = C('#1f2547'), dusty = C('#7f8fb8'), mid = C('#3a4a7c');
+  const c = new THREE.Color();
+  for (let i = 0; i < s * s; i++) {
+    const x = i % s, y = (i / s) | 0;
+    // tileable in x for the sphere seam
+    const a = (x / s) * Math.PI * 2;
+    const n = fbm(Math.cos(a) * 2 + 5, Math.sin(a) * 2, y / 70);
+    const fine = noise3(x / 3, y / 3, 1);
+    const bloom = smooth(Math.min(1, Math.max(0, (n - 0.38) * 2.6)));
+    c.copy(dark).lerp(mid, fine * 0.35).lerp(dusty, bloom * 0.85);
+    img.data[i * 4] = c.r * 255; img.data[i * 4 + 1] = c.g * 255; img.data[i * 4 + 2] = c.b * 255; img.data[i * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = THREE.RepeatWrapping;
+  return t;
+}
+
 export function blueberry(dark = false) {
-  const geo = deform(new THREE.SphereGeometry(1, 56, 40), (v) => {
-    v.y *= 0.84;
-    const top = Math.exp(-(0.84 - v.y) / 0.05);
-    v.y -= top * 0.18;
-    v.multiplyScalar(1 + (fbm(v.x * 2, v.y * 2, v.z * 2) - 0.5) * 0.05);
+  // crown: a sunken star with five dried sepal tips around the rim
+  const geo = deform(new THREE.SphereGeometry(1, 96, 72), (v) => {
+    v.y *= 0.82;
+    const rTop = Math.hypot(v.x, v.z);
+    if (v.y > 0) {
+      const a = Math.atan2(v.z, v.x);
+      const star = 0.22 + 0.06 * Math.cos(a * 5);
+      const inside = smooth(Math.max(0, Math.min(1, (star - rTop) / 0.12)));
+      const rim = Math.exp(-Math.pow((rTop - star) / 0.05, 2));
+      v.y -= inside * 0.2 * (dark ? 0.5 : 1);
+      v.y += rim * 0.035;
+    }
+    v.multiplyScalar(1 + (fbm(v.x * 2.2, v.y * 2.2, v.z * 2.2) - 0.5) * 0.05);
   });
   const mat = dark
-    ? new THREE.MeshPhysicalMaterial({ color: '#1c1226', roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.1, bumpMap: grain(), bumpScale: 0.4 })
-    : new THREE.MeshPhysicalMaterial({ color: '#36456f', roughness: 0.62, sheen: 1, sheenColor: C('#a9bbdc'), sheenRoughness: 0.45, bumpMap: grain(), bumpScale: 0.5 });
+    ? new THREE.MeshPhysicalMaterial({ color: '#160d1e', roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.06, sheen: 0.4, sheenColor: C('#5a2a6a'), bumpMap: grain(), bumpScale: 0.3 })
+    : new THREE.MeshPhysicalMaterial({
+      map: cached('bloom', bloomTexture), roughness: 0.68, sheen: 1, sheenColor: C('#b8c6e6'), sheenRoughness: 0.55,
+      clearcoat: 0.15, clearcoatRoughness: 0.6, bumpMap: grain(), bumpScale: 0.35
+    });
   const g = new THREE.Group();
   g.add(new THREE.Mesh(geo, mat));
-  // crown
   const crown = new THREE.Group();
+  const sepalMat = new THREE.MeshStandardMaterial({ color: dark ? '#4a3524' : '#3b2f3a', roughness: 0.9 });
   for (let i = 0; i < 5; i++) {
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.22, 4), new THREE.MeshStandardMaterial({ color: dark ? '#3a2a1e' : '#2b2a3e', roughness: 0.8 }));
-    tip.position.set(Math.cos(i * 1.2566) * 0.12, 0.7, Math.sin(i * 1.2566) * 0.12);
-    tip.rotation.set(Math.sin(i * 1.2566) * 0.9, 0, -Math.cos(i * 1.2566) * 0.9);
+    const a = (i / 5) * Math.PI * 2;
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.2, 5).translate(0, 0.1, 0), sepalMat);
+    tip.position.set(Math.cos(a) * 0.24, dark ? 0.8 : 0.79, Math.sin(a) * 0.24);
+    tip.lookAt(Math.cos(a) * 2, 1.4, Math.sin(a) * 2);
+    tip.rotateX(Math.PI / 2);
     crown.add(tip);
   }
+  const pit = new THREE.Mesh(new THREE.CircleGeometry(0.12, 24), new THREE.MeshStandardMaterial({ color: '#141220', roughness: 1 }));
+  pit.rotation.x = -Math.PI / 2;
+  pit.position.y = dark ? 0.72 : 0.62;
+  crown.add(pit);
+  if (dark) crown.rotation.x = Math.PI; // blackcurrants carry the dried flower at the bottom
   g.add(crown);
+  if (dark) g.add(stemMesh([[0, 0.8, 0], [0.05, 1.1, 0.02], [0.15, 1.4, 0]], 0.03, '#556b2f'));
   g.scale.setScalar(dark ? 0.1 : 0.13);
   return shadowed(g);
 }
