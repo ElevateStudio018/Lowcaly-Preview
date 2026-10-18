@@ -186,29 +186,8 @@ $$('a[href^="#"]').forEach((a) => a.addEventListener('click', (e) => {
   lenis.scrollTo(el, { duration: 1.6, offset: el.id === 'story' ? 0 : -70 });
 }));
 
-// ---------------------------------------------------------------- custom cursor + magnetic buttons
-const cursor = $('#cursor');
+// ---------------------------------------------------------------- magnetic buttons
 if (matchMedia('(hover: hover) and (pointer: fine)').matches && !reducedMotion) {
-  document.body.classList.add('has-cursor');
-  const dot = cursor.firstElementChild, ring = cursor.lastElementChild;
-  let mx = -100, my = -100, rx = -100, ry = -100;
-  addEventListener('pointermove', (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
-  const loop = () => {
-    rx += (mx - rx) * 0.18; ry += (my - ry) * 0.18;
-    dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%,-50%)`;
-    ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%,-50%)`;
-    const el = document.elementFromPoint(mx, my);
-    const onDark = el?.closest('.footer, .split__body, .marquee, .ig__text, .loader, .hero');
-    const b = document.body.classList;
-    // grabbable fruit/packs just get a bigger ring – no text on the cursor
-    cursor.classList.toggle('is-grab', b.contains('is-grabbable') || b.contains('is-grabbing'));
-    cursor.classList.toggle('is-down', b.contains('is-grabbing'));
-    cursor.classList.toggle('is-link', !!el?.closest('a, button'));
-    cursor.style.setProperty('--cursor', onDark ? '#fff3e3' : (el?.closest('.story') ? stage.style.getPropertyValue('--dot') || '#005745' : '#005745'));
-    cursor.style.setProperty('--cursor-ink', onDark ? '#005745' : '#fff3e3');
-    requestAnimationFrame(loop);
-  };
-  loop();
   $$('.btn, .chip').forEach((btn) => {
     btn.addEventListener('pointermove', (e) => {
       const r = btn.getBoundingClientRect();
