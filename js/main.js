@@ -342,8 +342,7 @@ function revealHero() {
   heroRevealed = true;
   hero.classList.add('is-revealed');
 }
-// the card lands ~3 s before the cut ends; scrolling or a stalled video reveals it at once
-const REVEAL_BEFORE_END = 3.2;
+// the title arrives a beat after the page is ready (or straight away on scroll)
 addEventListener('scroll', () => { if (scrollY > 40) revealHero(); }, { passive: true });
 
 if (heroVideo && !reducedMotion && !navigator.connection?.saveData) {
@@ -361,16 +360,9 @@ if (heroVideo && !reducedMotion && !navigator.connection?.saveData) {
   heroVideo.src = src;
   heroVideo.preload = 'auto';
   heroVideo.addEventListener('playing', () => heroVideo.classList.add('is-playing'), { once: true });
-  heroVideo.addEventListener('timeupdate', () => {
-    const d = heroVideo.duration;
-    if (d > REVEAL_BEFORE_END + 1 && heroVideo.currentTime >= d - REVEAL_BEFORE_END) revealHero();
-  });
   // loop by hand so the end card stays up while the film keeps running
   heroVideo.addEventListener('ended', () => { heroVideo.currentTime = 0; heroVideo.play().catch(() => {}); });
-  heroVideo.addEventListener('error', revealHero);
-  heroVideo.play().catch(() => setTimeout(revealHero, 1500));
-  // if the film hasn't started after a few seconds (slow network, codec), don't keep people waiting
-  setTimeout(() => { if (!heroVideo.classList.contains('is-playing')) revealHero(); }, 4500);
+  heroVideo.play().catch(() => {});
   // thin timeline along the bottom follows the film
   const tick = () => {
     if (heroVideo.duration) heroTime.style.transform = `scaleX(${heroVideo.currentTime / heroVideo.duration})`;
@@ -379,9 +371,8 @@ if (heroVideo && !reducedMotion && !navigator.connection?.saveData) {
   tick();
   // pause off-screen to save battery
   new IntersectionObserver(([e]) => (e.isIntersecting ? heroVideo.play().catch(() => {}) : heroVideo.pause())).observe(heroVideo);
-} else {
-  if (matchMedia('(max-width: 760px)').matches) $('.hero__media img').src = 'assets/img/hero-mobile.webp';
-  setTimeout(revealHero, reducedMotion ? 0 : 900);
+} else if (matchMedia('(max-width: 760px)').matches) {
+  $('.hero__media img').src = 'assets/img/hero-mobile.webp';
 }
 
 // ---------------------------------------------------------------- boot
@@ -442,6 +433,7 @@ async function boot() {
   setTimeout(() => {
     loader.classList.add('is-done');
     document.body.classList.add('is-ready');
+    setTimeout(revealHero, reducedMotion ? 0 : 1000);
   }, 600);
 }
 boot();
